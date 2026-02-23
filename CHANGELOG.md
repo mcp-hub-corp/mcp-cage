@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **2026-02-23**: Pretty CLI log handler (`PrettyHandler`) replacing `slog.TextHandler`. Terminal: ANSI colors + icons (`⚠` warn, `✗` error), no timestamps. Non-terminal: plain `[LEVEL] message` format.
+- **2026-02-23**: Runtime/command consistency warning in `parseHubManifest()` — warns when `runtime.type` doesn't match the entrypoint command (e.g., python runtime with node command).
+
 ### Fixed
 
 - **2026-02-20**: Fixed cross-platform test compilation:

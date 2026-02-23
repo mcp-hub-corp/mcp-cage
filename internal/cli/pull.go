@@ -436,6 +436,6 @@ func createLogger(level string) *slog.Logger {
 		Level: logLevel,
 	}
 
-	handler := slog.NewTextHandler(os.Stderr, opts)
+	handler := NewPrettyHandler(os.Stderr, opts)
 	return slog.New(handler)
 }

@@ -3,6 +3,7 @@ package manifest
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"runtime"
 	"strings"
@@ -294,6 +295,30 @@ func parseHubManifest(data []byte) (*Manifest, error) {
 	}
 	// Append any extra args from the entrypoint definition
 	args = append(args, hm.Entrypoint.Args...)
+
+	// Warn if runtime type and command are inconsistent
+	if hm.Runtime.Type != "" && command != "" {
+		expectedCommands := map[string][]string{
+			"node":   {"node", "npx", "bun", "deno"},
+			"python": {"python", "python3", "uv", "uvx"},
+			"binary": {},
+		}
+		if expected, ok := expectedCommands[hm.Runtime.Type]; ok && len(expected) > 0 {
+			consistent := false
+			for _, ec := range expected {
+				if command == ec {
+					consistent = true
+					break
+				}
+			}
+			if !consistent {
+				slog.Warn("manifest runtime/command mismatch",
+					slog.String("runtime_type", hm.Runtime.Type),
+					slog.String("command", command),
+				)
+			}
+		}
+	}
 
 	m := &Manifest{
 		SchemaVersion: hm.SchemaVersion.String(),

@@ -534,6 +534,38 @@ func TestParse_HubManifestNoCertification(t *testing.T) {
 	assert.Nil(t, m.SecurityMeta)
 }
 
+func TestParseHubManifest_RuntimeCommandMismatch(t *testing.T) {
+	// Test that a runtime/command mismatch doesn't cause an error (just a warning)
+	manifest := `{
+		"schema_version": 1,
+		"package": {"id": "acme/test", "version": "1.0.0"},
+		"runtime": {"type": "python", "version": ">=3.10"},
+		"entrypoint": {"command": ["node", "dist/index.js"]},
+		"certification": {"level": 1, "score": 65}
+	}`
+
+	m, err := Parse([]byte(manifest))
+	require.NoError(t, err)
+	assert.Equal(t, "node", m.Entrypoints[0].Command)
+	assert.Equal(t, []string{"dist/index.js"}, m.Entrypoints[0].Args)
+}
+
+func TestParseHubManifest_RuntimeCommandConsistent(t *testing.T) {
+	// Test that consistent runtime/command works fine
+	manifest := `{
+		"schema_version": 1,
+		"package": {"id": "acme/test", "version": "1.0.0"},
+		"runtime": {"type": "python", "version": ">=3.10"},
+		"entrypoint": {"command": ["uv", "run", "my-tool"]},
+		"certification": {"level": 1, "score": 65}
+	}`
+
+	m, err := Parse([]byte(manifest))
+	require.NoError(t, err)
+	assert.Equal(t, "uv", m.Entrypoints[0].Command)
+	assert.Equal(t, []string{"run", "my-tool"}, m.Entrypoints[0].Args)
+}
+
 func TestParse_ClientManifestNoSecurityMeta(t *testing.T) {
 	// Client-format manifests should never have SecurityMeta
 	data := []byte(`{
