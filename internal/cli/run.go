@@ -213,6 +213,21 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("manifest validation failed: %w", validateErr)
 	}
 
+	// Always-on security banner for hub-format manifests
+	if mf.SecurityMeta != nil {
+		printSecurityBanner(org, name, resolvedVersion, mf.SecurityMeta)
+	}
+
+	// Enforce score policy
+	if mf.SecurityMeta != nil && pol.ScorePolicy != nil {
+		if scorePolicyErr := pol.ScorePolicy.Validate(mf.SecurityMeta.Score); scorePolicyErr != nil {
+			if auditLogger != nil {
+				_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("score policy violation: %v", scorePolicyErr)) //nolint:errcheck // audit logging
+			}
+			return fmt.Errorf("score policy violation: %w", scorePolicyErr)
+		}
+	}
+
 	// Apply manifest permissions
 	if permErr := pol.ApplyManifestPermissions(mf); permErr != nil {
 		if auditLogger != nil {
@@ -467,6 +482,47 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	)
 
 	return nil
+}
+
+// printSecurityBanner prints a one-line security summary to stderr for hub-format manifests.
+// This is always displayed (not gated by --verbose).
+//
+//nolint:errcheck // all writes are to stderr, errors are not actionable
+func printSecurityBanner(org, name, version string, sm *manifest.SecurityMetadata) {
+	w := os.Stderr
+
+	// Build the one-line banner
+	toolCount := 0
+	if sm.Capabilities != nil {
+		toolCount = len(sm.Capabilities.Tools)
+	}
+
+	criticalFindings := 0
+	if sm.Findings != nil {
+		criticalFindings = sm.Findings.Critical
+	}
+
+	fmt.Fprintf(w, "[mcp-hub] %s/%s@%s | Score: %d/100 | Cert Level %d | %d tools | %d critical findings\n",
+		org, name, version, sm.Score, sm.CertLevel, toolCount, criticalFindings)
+
+	// Capability warnings: high/critical risk tools
+	if sm.Capabilities != nil {
+		for _, tool := range sm.Capabilities.Tools {
+			if tool.RiskLevel == "critical" || tool.RiskLevel == "high" {
+				fmt.Fprintf(w, "[!] High-risk tool: %s (%s)\n", tool.Name, tool.RiskLevel)
+			}
+		}
+	}
+
+	// Findings warnings: critical and high counts
+	if sm.Findings != nil && (sm.Findings.Critical > 0 || sm.Findings.High > 0) {
+		fmt.Fprintf(w, "[!] Security findings: %d critical, %d high\n", sm.Findings.Critical, sm.Findings.High)
+	}
+
+	// Compliance warnings: failed controls
+	if sm.Compliance != nil && sm.Compliance.FailedControls > 0 {
+		fmt.Fprintf(w, "[!] Compliance: %d/%d controls failed\n", sm.Compliance.FailedControls, sm.Compliance.TotalControls)
+	}
 }
 
 // extractBundle extracts a gzipped tar bundle to a directory

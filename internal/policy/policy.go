@@ -21,6 +21,7 @@ type Policy struct {
 	NetworkAllowlist []string         // allowed domains/IPs
 	EnvAllowlist     []string         // allowed env vars (if empty, all allowed)
 	CertLevelPolicy  *CertLevelPolicy // certification level policy
+	ScorePolicy      *ScorePolicy     // security score policy
 	logger           *slog.Logger
 }
 
@@ -45,6 +46,7 @@ func NewPolicy(cfg *config.Config) *Policy {
 		DefaultTimeout:  cfg.Timeout,
 		AllowSubprocess: true, // trust manifest permissions
 		CertLevelPolicy: NewCertLevelPolicyWithLogger(cfg.Policy.MinCertLevel, cfg.Policy.CertLevelMode, logger),
+		ScorePolicy:     NewScorePolicyWithLogger(cfg.Policy.MinScore, cfg.Policy.ScoreMode, logger),
 		logger:          logger,
 	}
 }
@@ -59,6 +61,7 @@ func NewPolicyWithLogger(cfg *config.Config, logger *slog.Logger) *Policy {
 		DefaultTimeout:  cfg.Timeout,
 		AllowSubprocess: true, // trust manifest permissions
 		CertLevelPolicy: NewCertLevelPolicyWithLogger(cfg.Policy.MinCertLevel, cfg.Policy.CertLevelMode, logger),
+		ScorePolicy:     NewScorePolicyWithLogger(cfg.Policy.MinScore, cfg.Policy.ScoreMode, logger),
 		logger:          logger,
 	}
 }

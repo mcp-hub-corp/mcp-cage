@@ -19,6 +19,8 @@ type Manifest struct {
 	Limits        LimitsInfo      `json:"limits_recommended"`
 	// HubFormat indicates the manifest was parsed from hub format (no bundle/transport fields)
 	HubFormat bool `json:"-"`
+	// SecurityMeta contains security metadata from hub manifests (nil for client-format manifests)
+	SecurityMeta *SecurityMetadata `json:"-"`
 }
 
 // PackageInfo contains package metadata
@@ -129,8 +131,71 @@ type hubResources struct {
 }
 
 type hubCertification struct {
-	Level int `json:"level"`
-	Score int `json:"score"`
+	Level            int              `json:"level"`
+	Score            int              `json:"score"`
+	SecurityScore    int              `json:"security_score"`
+	SupplyChainScore int              `json:"supply_chain_score"`
+	MaturityScore    int              `json:"maturity_score"`
+	Findings         *FindingsSummary `json:"findings,omitempty"`
+	Capabilities     *CapabilitiesInfo `json:"capabilities,omitempty"`
+	Compliance       *ComplianceInfo  `json:"compliance,omitempty"`
+}
+
+// FindingsSummary contains a summary of security findings
+type FindingsSummary struct {
+	Total    int `json:"total"`
+	Critical int `json:"critical"`
+	High     int `json:"high"`
+	Medium   int `json:"medium"`
+	Low      int `json:"low"`
+}
+
+// ToolInfo describes an MCP tool capability
+type ToolInfo struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	RiskLevel   string `json:"risk_level"`
+}
+
+// ResourceInfo describes an MCP resource capability
+type ResourceInfo struct {
+	URI  string `json:"uri"`
+	Name string `json:"name"`
+}
+
+// CapabilitiesInfo contains MCP server capabilities
+type CapabilitiesInfo struct {
+	Tools       []ToolInfo     `json:"tools,omitempty"`
+	Resources   []ResourceInfo `json:"resources,omitempty"`
+	Transport   string         `json:"transport,omitempty"`
+	AuthSignals []string       `json:"auth_signals,omitempty"`
+}
+
+// ComplianceItem represents a single compliance control result
+type ComplianceItem struct {
+	ControlID string `json:"control_id"`
+	Severity  string `json:"severity"`
+	Message   string `json:"message"`
+}
+
+// ComplianceInfo contains compliance assessment results
+type ComplianceInfo struct {
+	TotalControls  int              `json:"total_controls"`
+	PassedControls int              `json:"passed_controls"`
+	FailedControls int              `json:"failed_controls"`
+	FailedItems    []ComplianceItem `json:"failed_items,omitempty"`
+}
+
+// SecurityMetadata contains security information extracted from hub manifests
+type SecurityMetadata struct {
+	Score            int
+	SecurityScore    int
+	SupplyChainScore int
+	MaturityScore    int
+	CertLevel        int
+	Findings         *FindingsSummary
+	Capabilities     *CapabilitiesInfo
+	Compliance       *ComplianceInfo
 }
 
 // Parse parses a manifest from JSON bytes, supporting both client and hub formats.
@@ -249,6 +314,20 @@ func parseHubManifest(data []byte) (*Manifest, error) {
 			},
 		},
 		HubFormat: true,
+	}
+
+	// Populate security metadata from certification data
+	if hm.Certification != nil {
+		m.SecurityMeta = &SecurityMetadata{
+			Score:            hm.Certification.Score,
+			SecurityScore:    hm.Certification.SecurityScore,
+			SupplyChainScore: hm.Certification.SupplyChainScore,
+			MaturityScore:    hm.Certification.MaturityScore,
+			CertLevel:        hm.Certification.Level,
+			Findings:         hm.Certification.Findings,
+			Capabilities:     hm.Certification.Capabilities,
+			Compliance:       hm.Certification.Compliance,
+		}
 	}
 
 	// Map permissions
