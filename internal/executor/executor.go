@@ -3,6 +3,7 @@ package executor
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -27,6 +28,7 @@ type STDIOExecutor struct {
 	env       map[string]string
 	logger    *slog.Logger
 	noSandbox bool
+	stderr    io.Writer
 }
 
 // NewSTDIOExecutor creates a new STDIO executor
@@ -71,6 +73,7 @@ func NewSTDIOExecutor(workDir string, limits *policy.ExecutionLimits, perms *man
 		perms:   perms,
 		env:     env,
 		logger:  slog.Default(),
+		stderr:  os.Stderr,
 	}, nil
 }
 
@@ -82,6 +85,12 @@ func (e *STDIOExecutor) SetLogger(logger *slog.Logger) {
 // SetNoSandbox disables sandbox restrictions
 func (e *STDIOExecutor) SetNoSandbox(noSandbox bool) {
 	e.noSandbox = noSandbox
+}
+
+// SetStderr sets the writer for subprocess stderr output.
+// Use io.Discard to silence subprocess output in non-verbose mode.
+func (e *STDIOExecutor) SetStderr(w io.Writer) {
+	e.stderr = w
 }
 
 // Execute starts the MCP server process via STDIO and waits for completion
@@ -125,7 +134,7 @@ func (e *STDIOExecutor) Execute(ctx context.Context, entrypoint *manifest.Entryp
 		}
 	}
 
-	e.logger.Info("starting STDIO executor",
+	e.logger.Debug("starting STDIO executor",
 		slog.String("command", commandPath),
 		slog.String("workdir", e.workDir),
 		slog.Int("max_cpu", e.limits.MaxCPU),
@@ -149,7 +158,7 @@ func (e *STDIOExecutor) Execute(ctx context.Context, entrypoint *manifest.Entryp
 	// Connect STDIO
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = e.stderr
 
 	// Apply sandbox restrictions (unless --no-sandbox is set)
 	sb := sandbox.New()

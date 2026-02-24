@@ -8,8 +8,10 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/security-mcp/mcp-client/internal/audit"
@@ -70,6 +72,9 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		}
 	}()
 
+	// Create progress UI
+	ui := NewProgressUI(os.Stderr, 6)
+
 	// Use registry URL from the reference if provided, otherwise use config
 	effectiveRegistryURL := cfg.RegistryURL
 	if refRegistryURL != "" {
@@ -99,24 +104,27 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	// Create policy
 	pol := policy.NewPolicyWithLogger(cfg, logger)
 
-	logger.Info("preparing to execute MCP server",
-		slog.String("package", fmt.Sprintf("%s/%s", org, name)),
-		slog.String("ref", version),
-	)
+	ui.Header(org, name, version)
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Timeout)
 	defer cancel()
 
-	// Resolve package reference
-	logger.Info("resolving package", slog.String("package", fmt.Sprintf("%s/%s", org, name)), slog.String("ref", version))
+	// Step 1: Resolving package
+	ui.StepStart(1, "Resolving package")
+	logger.Debug("resolving package", slog.String("package", fmt.Sprintf("%s/%s", org, name)), slog.String("ref", version))
 	resolveResp, err := registryClient.Resolve(ctx, org, name, version)
 	if err != nil {
+		ui.StepFail(1, "Resolving package")
 		if auditLogger != nil {
 			_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, err.Error()) //nolint:errcheck // audit logging
 		}
 		return fmt.Errorf("failed to resolve package: %w", err)
 	}
+	ui.StepDone(1, "Resolving package")
+
+	// Step 2: Checking policies
+	ui.StepStart(2, "Checking policies")
 
 	// Enforce origin policy
 	origin := resolveResp.Origin
@@ -125,6 +133,7 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	}
 	originPolicy := policy.NewOriginPolicy(cfg.Policy.AllowedOrigins)
 	if originPolicyErr := originPolicy.Validate(origin); originPolicyErr != nil {
+		ui.StepFail(2, "Checking policies")
 		if auditLogger != nil {
 			_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("origin policy violation: %v", originPolicyErr)) //nolint:errcheck // audit logging
 		}
@@ -134,18 +143,21 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	// Enforce certification level policy
 	certLevel := resolveResp.Resolved.CertificationLevel
 	if certLevelErr := pol.CertLevelPolicy.ValidateWithLogging(certLevel, fmt.Sprintf("%s/%s", org, name)); certLevelErr != nil {
+		ui.StepFail(2, "Checking policies")
 		if auditLogger != nil {
 			_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("certification level policy violation: %v", certLevelErr)) //nolint:errcheck // audit logging
 		}
 		return fmt.Errorf("certification level policy violation: %w", certLevelErr)
 	}
 
+	ui.StepDone(2, "Checking policies")
+
 	manifestDigest := resolveResp.Resolved.Manifest.Digest
 	bundleDigest := resolveResp.Resolved.Bundle.Digest
 	gitSHA := resolveResp.Resolved.GitSHA
 	resolvedVersion := resolveResp.Resolved.Version
 
-	logger.Info("package resolved",
+	logger.Debug("package resolved",
 		slog.String("version", resolvedVersion),
 		slog.String("origin", origin),
 		slog.String("git_sha", gitSHA),
@@ -153,13 +165,17 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		slog.String("bundle_digest", bundleDigest),
 	)
 
-	// Get or download manifest
+	// Step 3: Fetching manifest
+	ui.StepStart(3, "Fetching manifest")
+
 	var manifestData []byte
 	var manifestErr error
+	manifestCached := false
 	if !runFlags.noCache && cacheStore.Exists(manifestDigest, "manifest") {
-		logger.Info("manifest cache hit", slog.String("digest", manifestDigest))
+		logger.Debug("manifest cache hit", slog.String("digest", manifestDigest))
 		manifestData, manifestErr = cacheStore.GetManifest(manifestDigest)
 		if manifestErr != nil {
+			ui.StepFail(3, "Fetching manifest")
 			return fmt.Errorf("failed to read manifest from cache: %w", manifestErr)
 		}
 		// SECURITY: Re-validate digest of cached data to detect corruption/tampering
@@ -170,12 +186,15 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 			_ = cacheStore.Delete(manifestDigest, "manifest") //nolint:errcheck // best-effort cleanup
 			// Fall through to download
 			manifestData = nil
+		} else {
+			manifestCached = true
 		}
 	}
 	if manifestData == nil {
-		logger.Info("downloading manifest", slog.String("digest", manifestDigest))
+		logger.Debug("downloading manifest", slog.String("digest", manifestDigest))
 		manifestData, manifestErr = registryClient.DownloadManifest(ctx, org, manifestDigest)
 		if manifestErr != nil {
+			ui.StepFail(3, "Fetching manifest")
 			if auditLogger != nil {
 				_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("failed to download manifest: %v", manifestErr)) //nolint:errcheck // audit logging
 			}
@@ -184,6 +203,7 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 
 		// Validate digest
 		if validateManifestErr := registry.ValidateDigest(manifestData, manifestDigest); validateManifestErr != nil {
+			ui.StepFail(3, "Fetching manifest")
 			if auditLogger != nil {
 				_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("manifest digest validation failed: %v", validateManifestErr)) //nolint:errcheck // audit logging
 			}
@@ -200,6 +220,7 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	// Parse and validate manifest
 	mf, parseErr := manifest.Parse(manifestData)
 	if parseErr != nil {
+		ui.StepFail(3, "Fetching manifest")
 		if auditLogger != nil {
 			_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("failed to parse manifest: %v", parseErr)) //nolint:errcheck // audit logging
 		}
@@ -207,20 +228,17 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	}
 
 	if validateErr := manifest.Validate(mf); validateErr != nil {
+		ui.StepFail(3, "Fetching manifest")
 		if auditLogger != nil {
 			_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("manifest validation failed: %v", validateErr)) //nolint:errcheck // audit logging
 		}
 		return fmt.Errorf("manifest validation failed: %w", validateErr)
 	}
 
-	// Always-on security banner for hub-format manifests
-	if mf.SecurityMeta != nil {
-		printSecurityBanner(org, name, resolvedVersion, mf.SecurityMeta)
-	}
-
 	// Enforce score policy
 	if mf.SecurityMeta != nil && pol.ScorePolicy != nil {
 		if scorePolicyErr := pol.ScorePolicy.Validate(mf.SecurityMeta.Score); scorePolicyErr != nil {
+			ui.StepFail(3, "Fetching manifest")
 			if auditLogger != nil {
 				_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("score policy violation: %v", scorePolicyErr)) //nolint:errcheck // audit logging
 			}
@@ -230,6 +248,7 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 
 	// Apply manifest permissions
 	if permErr := pol.ApplyManifestPermissions(mf); permErr != nil {
+		ui.StepFail(3, "Fetching manifest")
 		if auditLogger != nil {
 			_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("policy application failed: %v", permErr)) //nolint:errcheck // audit logging
 		}
@@ -239,6 +258,7 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	// Select entrypoint
 	ep, err := manifest.SelectEntrypoint(mf)
 	if err != nil {
+		ui.StepFail(3, "Fetching manifest")
 		if auditLogger != nil {
 			_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("entrypoint selection failed: %v", err)) //nolint:errcheck // audit logging
 		}
@@ -251,13 +271,23 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		slog.String("command", ep.Command),
 	)
 
-	// Get or download bundle
+	if manifestCached {
+		ui.StepSkip(3, "Fetching manifest", "cached")
+	} else {
+		ui.StepDone(3, "Fetching manifest")
+	}
+
+	// Step 4: Fetching bundle
+	ui.StepStart(4, "Fetching bundle")
+
 	var bundleData []byte
 	var bundleErr error
+	bundleCached := false
 	if !runFlags.noCache && cacheStore.Exists(bundleDigest, "bundle") {
-		logger.Info("bundle cache hit", slog.String("digest", bundleDigest))
+		logger.Debug("bundle cache hit", slog.String("digest", bundleDigest))
 		bundleData, bundleErr = cacheStore.GetBundle(bundleDigest)
 		if bundleErr != nil {
+			ui.StepFail(4, "Fetching bundle")
 			return fmt.Errorf("failed to read bundle from cache: %w", bundleErr)
 		}
 		// SECURITY: Re-validate digest of cached data to detect corruption/tampering
@@ -267,12 +297,15 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 				slog.String("error", revalidateErr.Error()))
 			_ = cacheStore.Delete(bundleDigest, "bundle") //nolint:errcheck // best-effort cleanup
 			bundleData = nil
+		} else {
+			bundleCached = true
 		}
 	}
 	if bundleData == nil {
-		logger.Info("downloading bundle", slog.String("digest", bundleDigest))
+		logger.Debug("downloading bundle", slog.String("digest", bundleDigest))
 		bundleData, bundleErr = registryClient.DownloadBundle(ctx, org, bundleDigest)
 		if bundleErr != nil {
+			ui.StepFail(4, "Fetching bundle")
 			if auditLogger != nil {
 				_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("failed to download bundle: %v", bundleErr)) //nolint:errcheck // audit logging
 			}
@@ -281,6 +314,7 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 
 		// Validate digest
 		if validateBundleErr := registry.ValidateDigest(bundleData, bundleDigest); validateBundleErr != nil {
+			ui.StepFail(4, "Fetching bundle")
 			if auditLogger != nil {
 				_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("bundle digest validation failed: %v", validateBundleErr)) //nolint:errcheck // audit logging
 			}
@@ -294,9 +328,19 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	if bundleCached {
+		ui.StepSkip(4, "Fetching bundle", "cached")
+	} else {
+		ui.StepDone(4, "Fetching bundle")
+	}
+
+	// Step 5: Extracting bundle
+	ui.StepStart(5, "Extracting bundle")
+
 	// Create temporary directory for bundle extraction with restricted permissions (0700)
 	tempDir, tempErr := os.MkdirTemp("", "mcp-bundle-*")
 	if tempErr != nil {
+		ui.StepFail(5, "Extracting bundle")
 		if auditLogger != nil {
 			_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("failed to create temp directory: %v", tempErr)) //nolint:errcheck // audit logging
 		}
@@ -304,6 +348,7 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	}
 	// SECURITY: Restrict temp directory permissions to prevent TOCTOU attacks
 	if chmodErr := os.Chmod(tempDir, 0o700); chmodErr != nil {
+		ui.StepFail(5, "Extracting bundle")
 		return fmt.Errorf("failed to set temp directory permissions: %w", chmodErr)
 	}
 	defer func() {
@@ -313,8 +358,8 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	}()
 
 	// Extract bundle
-	logger.Info("extracting bundle", slog.String("path", tempDir))
 	if extractErr := extractBundle(bundleData, tempDir); extractErr != nil {
+		ui.StepFail(5, "Extracting bundle")
 		if auditLogger != nil {
 			_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("failed to extract bundle: %v", extractErr)) //nolint:errcheck // audit logging
 		}
@@ -330,6 +375,11 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		logger.Debug("using bundle subdirectory as root", slog.String("path", bundleRoot))
 	}
 
+	ui.StepDone(5, "Extracting bundle")
+
+	// Step 6: Preparing execution
+	ui.StepStart(6, "Preparing execution")
+
 	// Apply execution limits from policy
 	// CRITICAL: ApplyLimits ALWAYS returns non-nil limits with mandatory safe defaults
 	limits := pol.ApplyLimits(mf)
@@ -337,31 +387,37 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	// CRITICAL SECURITY: Verify limits are properly set before proceeding
 	// This is a fail-safe to ensure execution without limits is NEVER possible
 	if limits == nil {
+		ui.StepFail(6, "Preparing execution")
 		return fmt.Errorf("CRITICAL SECURITY ERROR: ApplyLimits returned nil - execution without limits is forbidden")
 	}
 
 	if limits.MaxCPU <= 0 {
+		ui.StepFail(6, "Preparing execution")
 		return fmt.Errorf("CRITICAL SECURITY ERROR: MaxCPU not set properly (%d) - execution without CPU limits is forbidden", limits.MaxCPU)
 	}
 
 	if limits.MaxMemory == "" {
+		ui.StepFail(6, "Preparing execution")
 		return fmt.Errorf("CRITICAL SECURITY ERROR: MaxMemory not set - execution without memory limits is forbidden")
 	}
 
 	if limits.MaxPIDs <= 0 {
+		ui.StepFail(6, "Preparing execution")
 		return fmt.Errorf("CRITICAL SECURITY ERROR: MaxPIDs not set properly (%d) - execution without PID limits is forbidden", limits.MaxPIDs)
 	}
 
 	if limits.MaxFDs <= 0 {
+		ui.StepFail(6, "Preparing execution")
 		return fmt.Errorf("CRITICAL SECURITY ERROR: MaxFDs not set properly (%d) - execution without file descriptor limits is forbidden", limits.MaxFDs)
 	}
 
 	if limits.Timeout <= 0 {
+		ui.StepFail(6, "Preparing execution")
 		return fmt.Errorf("CRITICAL SECURITY ERROR: Timeout not set properly (%v) - execution without timeout is forbidden", limits.Timeout)
 	}
 
-	// Log the limits being applied (INFO level for security audit trail)
-	logger.Info("SECURITY: applying mandatory execution limits",
+	// Log the limits being applied (DEBUG level, details captured in InfoCard)
+	logger.Debug("SECURITY: applying mandatory execution limits",
 		slog.Int("max_cpu_millicores", limits.MaxCPU),
 		slog.String("max_memory", limits.MaxMemory),
 		slog.Int("max_pids", limits.MaxPIDs),
@@ -370,20 +426,12 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		slog.String("security_policy", "mandatory_limits_enforced"),
 	)
 
-	// Print verbose security summary if -v flag is set
-	if verbose {
-		formatStr := "hub"
-		if !mf.HubFormat {
-			formatStr = "registry"
-		}
-		printSecuritySummary(org, name, resolvedVersion, origin, certLevel, gitSHA, formatStr, ep, mf, limits, bundleRoot, runFlags.noSandbox)
-	}
-
 	// Load environment variables
 	env := make(map[string]string)
 	if runFlags.envFile != "" {
 		if envFileErr := loadEnvFile(runFlags.envFile, env); envFileErr != nil {
 			// SECURITY: When --env-file is explicitly specified, treat failure as an error
+			ui.StepFail(6, "Preparing execution")
 			return fmt.Errorf("failed to load env file %s: %w", runFlags.envFile, envFileErr)
 		}
 	}
@@ -399,6 +447,7 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	// Create STDIO executor
 	stdioExec, err := executor.NewSTDIOExecutor(bundleRoot, limits, &mf.Permissions, env)
 	if err != nil {
+		ui.StepFail(6, "Preparing execution")
 		if auditLogger != nil {
 			_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("failed to create executor: %v", err)) //nolint:errcheck // audit logging
 		}
@@ -406,6 +455,9 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	}
 	stdioExec.SetLogger(logger)
 	stdioExec.SetNoSandbox(runFlags.noSandbox)
+	if !verbose {
+		stdioExec.SetStderr(io.Discard)
+	}
 
 	// SECURITY: Re-verify entrypoint binary/script digest immediately before exec to mitigate TOCTOU
 	if manifest.IsSystemCommand(ep.Command) {
@@ -424,11 +476,42 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		entrypointPath := filepath.Join(bundleRoot, ep.Command)
 		entrypointData, readErr := os.ReadFile(entrypointPath)
 		if readErr != nil {
+			ui.StepFail(6, "Preparing execution")
 			return fmt.Errorf("failed to read entrypoint before execution: %w", readErr)
 		}
 		entrypointDigest := fmt.Sprintf("sha256:%s", registry.ComputeSHA256(entrypointData))
 		logger.Debug("entrypoint pre-exec digest verified", slog.String("digest", entrypointDigest))
 	}
+
+	ui.StepDone(6, "Preparing execution")
+
+	// Show info card (always, not gated by verbose)
+	sb := sandbox.New()
+	formatStr := "hub"
+	if !mf.HubFormat {
+		formatStr = "registry"
+	}
+	secScore := -1
+	var findings *manifest.FindingsSummary
+	if mf.SecurityMeta != nil {
+		secScore = mf.SecurityMeta.Score
+		findings = mf.SecurityMeta.Findings
+	}
+	ui.InfoCard(InfoCardData{
+		Org:         org,
+		Name:        name,
+		Version:     resolvedVersion,
+		Origin:      origin,
+		CertLevel:   certLevel,
+		GitSHA:      gitSHA,
+		Format:      formatStr,
+		Score:       secScore,
+		Findings:    findings,
+		Limits:      limits,
+		SandboxName: sb.Name(),
+		SandboxCaps: sb.Capabilities(),
+		NoSandbox:   runFlags.noSandbox,
+	})
 
 	// Log execution start
 	packageID := fmt.Sprintf("%s/%s", org, name)
@@ -436,11 +519,37 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		_ = auditLogger.LogStart(packageID, resolvedVersion, bundleDigest, ep.Command, gitSHA) //nolint:errcheck // audit logging
 	}
 
-	// Execute the MCP server
-	startTime := time.Now()
-	logger.Info("starting MCP server execution")
+	// Set up signal handling for graceful shutdown
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
-	execErr := stdioExec.Execute(ctx, ep, bundleRoot)
+	ui.ListeningBanner("stdio")
+
+	startTime := time.Now()
+
+	// Run executor in goroutine
+	execCh := make(chan error, 1)
+	go func() {
+		execCh <- stdioExec.Execute(ctx, ep, bundleRoot)
+	}()
+
+	// Wait for completion or signal
+	var execErr error
+	select {
+	case execErr = <-execCh:
+		signal.Stop(sigCh)
+	case <-sigCh:
+		signal.Stop(sigCh)
+		cancel() // cancel context to stop executor
+		<-execCh // wait for executor to finish
+		duration := time.Since(startTime)
+		ui.ShutdownBanner(duration)
+		// Log clean shutdown to audit
+		if auditLogger != nil {
+			_ = auditLogger.LogEnd(packageID, resolvedVersion, 0, duration, "signal")
+		}
+		return nil
+	}
 
 	// Calculate execution duration
 	duration := time.Since(startTime)
@@ -470,59 +579,13 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	}
 
 	if execErr != nil {
-		logger.Error("MCP server execution failed",
-			slog.String("error", execErr.Error()),
-			slog.Duration("duration", duration),
-		)
+		ui.ErrorBanner(execErr.Error())
 		return execErr
 	}
 
-	logger.Info("MCP server execution completed successfully",
-		slog.Duration("duration", duration),
-	)
+	ui.ShutdownBanner(duration)
 
 	return nil
-}
-
-// printSecurityBanner prints a one-line security summary to stderr for hub-format manifests.
-// This is always displayed (not gated by --verbose).
-//
-//nolint:errcheck // all writes are to stderr, errors are not actionable
-func printSecurityBanner(org, name, version string, sm *manifest.SecurityMetadata) {
-	w := os.Stderr
-
-	// Build the one-line banner
-	toolCount := 0
-	if sm.Capabilities != nil {
-		toolCount = len(sm.Capabilities.Tools)
-	}
-
-	criticalFindings := 0
-	if sm.Findings != nil {
-		criticalFindings = sm.Findings.Critical
-	}
-
-	fmt.Fprintf(w, "[mcp-hub] %s/%s@%s | Score: %d/100 | Cert Level %d | %d tools | %d critical findings\n",
-		org, name, version, sm.Score, sm.CertLevel, toolCount, criticalFindings)
-
-	// Capability warnings: high/critical risk tools
-	if sm.Capabilities != nil {
-		for _, tool := range sm.Capabilities.Tools {
-			if tool.RiskLevel == "critical" || tool.RiskLevel == "high" {
-				fmt.Fprintf(w, "[!] High-risk tool: %s (%s)\n", tool.Name, tool.RiskLevel)
-			}
-		}
-	}
-
-	// Findings warnings: critical and high counts
-	if sm.Findings != nil && (sm.Findings.Critical > 0 || sm.Findings.High > 0) {
-		fmt.Fprintf(w, "[!] Security findings: %d critical, %d high\n", sm.Findings.Critical, sm.Findings.High)
-	}
-
-	// Compliance warnings: failed controls
-	if sm.Compliance != nil && sm.Compliance.FailedControls > 0 {
-		fmt.Fprintf(w, "[!] Compliance: %d/%d controls failed\n", sm.Compliance.FailedControls, sm.Compliance.TotalControls)
-	}
 }
 
 // extractBundle extracts a gzipped tar bundle to a directory
@@ -623,209 +686,6 @@ func extractBundle(data []byte, destDir string) error {
 	}
 
 	return nil
-}
-
-// ANSI color constants for terminal output
-const (
-	colorReset  = "\033[0m"
-	colorBold   = "\033[1m"
-	colorRed    = "\033[31m"
-	colorGreen  = "\033[32m"
-	colorYellow = "\033[33m"
-	colorCyan   = "\033[36m"
-)
-
-// certLevelName maps certification levels to human-readable names
-func certLevelName(level int) string {
-	switch level {
-	case 0:
-		return "Integrity Verified"
-	case 1:
-		return "Static Verified"
-	case 2:
-		return "Security Certified"
-	case 3:
-		return "Runtime Certified"
-	default:
-		return "Unknown"
-	}
-}
-
-//nolint:errcheck // all writes are to stderr, errors are not actionable
-func printSecuritySummary(org, name, version, origin string, certLevel int, gitSHA, format string, ep *manifest.Entrypoint, mf *manifest.Manifest, limits *policy.ExecutionLimits, bundleRoot string, noSandbox bool) {
-	const boxWidth = 50
-	border := strings.Repeat("─", boxWidth)
-
-	w := os.Stderr
-
-	fmt.Fprintf(w, "\n%s┌%s┐%s\n", colorCyan, border, colorReset)
-	fmt.Fprintf(w, "%s│%s  %sMCP Security Summary%s%s%s│%s\n", colorCyan, colorReset, colorBold, colorReset, strings.Repeat(" ", boxWidth-22), colorCyan, colorReset)
-	fmt.Fprintf(w, "%s├%s┤%s\n", colorCyan, border, colorReset)
-
-	// Package Info
-	printField(w, "Package", fmt.Sprintf("%s/%s", org, name), boxWidth)
-	printField(w, "Version", version, boxWidth)
-	printField(w, "Origin", origin, boxWidth)
-	printField(w, "Cert Level", fmt.Sprintf("%d (%s)", certLevel, certLevelName(certLevel)), boxWidth)
-	printField(w, "Format", format, boxWidth)
-	if gitSHA != "" {
-		displaySHA := gitSHA
-		if len(displaySHA) > 7 {
-			displaySHA = displaySHA[:7]
-		}
-		printField(w, "Git SHA", displaySHA, boxWidth)
-	}
-
-	// Entrypoint
-	fmt.Fprintf(w, "%s├%s┤%s\n", colorCyan, border, colorReset)
-	fmt.Fprintf(w, "%s│%s  %sEntrypoint%s%s%s│%s\n", colorCyan, colorReset, colorBold, colorReset, strings.Repeat(" ", boxWidth-12), colorCyan, colorReset)
-	cmdStr := ep.Command
-	if len(ep.Args) > 0 {
-		cmdStr += " " + strings.Join(ep.Args, " ")
-	}
-	printField(w, "  Command", cmdStr, boxWidth)
-	printField(w, "  OS/Arch", fmt.Sprintf("%s/%s", ep.OS, ep.Arch), boxWidth)
-	printField(w, "  WorkDir", bundleRoot, boxWidth)
-
-	// Permissions Requested
-	fmt.Fprintf(w, "%s├%s┤%s\n", colorCyan, border, colorReset)
-	fmt.Fprintf(w, "%s│%s  %sPermissions Requested%s%s%s│%s\n", colorCyan, colorReset, colorBold, colorReset, strings.Repeat(" ", boxWidth-23), colorCyan, colorReset)
-
-	networkStr := "none"
-	if len(mf.Permissions.Network) > 0 {
-		networkStr = strings.Join(mf.Permissions.Network, ", ")
-	}
-	printField(w, "  Network", networkStr, boxWidth)
-
-	fsStr := "none"
-	if len(mf.Permissions.FileSystem) > 0 {
-		fsStr = strings.Join(mf.Permissions.FileSystem, ", ")
-	}
-	printField(w, "  Filesystem", fsStr, boxWidth)
-
-	if mf.Permissions.Subprocess {
-		fmt.Fprintf(w, "%s│%s  Subprocess:  %s%s allowed%s%s%s│%s\n", colorCyan, colorReset, colorGreen, "✓", colorReset, strings.Repeat(" ", boxWidth-24), colorCyan, colorReset)
-	} else {
-		fmt.Fprintf(w, "%s│%s  Subprocess:  %s%s denied%s%s%s│%s\n", colorCyan, colorReset, colorRed, "✗", colorReset, strings.Repeat(" ", boxWidth-23), colorCyan, colorReset)
-	}
-
-	envStr := "all"
-	if len(mf.Permissions.Environment) > 0 {
-		envStr = strings.Join(mf.Permissions.Environment, ", ")
-	}
-	printField(w, "  Environment", envStr, boxWidth)
-
-	// Execution Limits
-	fmt.Fprintf(w, "%s├%s┤%s\n", colorCyan, border, colorReset)
-	fmt.Fprintf(w, "%s│%s  %sExecution Limits%s%s%s│%s\n", colorCyan, colorReset, colorBold, colorReset, strings.Repeat(" ", boxWidth-18), colorCyan, colorReset)
-	printField(w, "  CPU", fmt.Sprintf("%d millicores", limits.MaxCPU), boxWidth)
-	printField(w, "  Memory", limits.MaxMemory, boxWidth)
-	printField(w, "  PIDs", fmt.Sprintf("%d", limits.MaxPIDs), boxWidth)
-	printField(w, "  FDs", fmt.Sprintf("%d", limits.MaxFDs), boxWidth)
-	printField(w, "  Timeout", limits.Timeout.String(), boxWidth)
-
-	// Sandbox Capabilities
-	fmt.Fprintf(w, "%s├%s┤%s\n", colorCyan, border, colorReset)
-
-	sb := sandbox.New()
-	caps := sb.Capabilities()
-	sbName := sb.Name()
-
-	if noSandbox {
-		fmt.Fprintf(w, "%s│%s  %s%sSandbox: DISABLED (--no-sandbox)%s%s%s│%s\n", colorCyan, colorReset, colorBold, colorYellow, colorReset, strings.Repeat(" ", boxWidth-35), colorCyan, colorReset)
-	} else {
-		fmt.Fprintf(w, "%s│%s  %sSandbox: %s%s%s%s│%s\n", colorCyan, colorReset, colorBold, sbName, colorReset, strings.Repeat(" ", boxWidth-12-len(sbName)), colorCyan, colorReset)
-	}
-
-	printSecCapability(w, "CPU Limiting", caps.CPULimit, boxWidth)
-	printSecCapability(w, "Memory Limiting", caps.MemoryLimit, boxWidth)
-	printSecCapability(w, "PID Limiting", caps.PIDLimit, boxWidth)
-	printSecCapability(w, "FD Limiting", caps.FDLimit, boxWidth)
-	printSecCapability(w, "Network Isolation", caps.NetworkIsolation, boxWidth)
-	printSecCapability(w, "Filesystem Isolation", caps.FilesystemIsolation, boxWidth)
-	if caps.Cgroups {
-		printSecCapability(w, "cgroups", true, boxWidth)
-	}
-	if caps.Namespaces {
-		printSecCapability(w, "Namespaces", true, boxWidth)
-	}
-	if caps.SupportsSeccomp {
-		printSecCapability(w, "seccomp", true, boxWidth)
-	}
-	if caps.SupportsLandlock {
-		printSecCapability(w, "Landlock", true, boxWidth)
-	}
-	if caps.SupportsSandboxExec {
-		printSecCapability(w, "sandbox-exec (SBPL)", true, boxWidth)
-	}
-	if caps.ProcessIsolation {
-		printSecCapability(w, "Process Isolation", true, boxWidth)
-	}
-
-	// Warnings
-	if len(caps.Warnings) > 0 || noSandbox {
-		fmt.Fprintf(w, "%s├%s┤%s\n", colorCyan, border, colorReset)
-		fmt.Fprintf(w, "%s│%s  %sWarnings%s%s%s│%s\n", colorCyan, colorReset, colorBold, colorReset, strings.Repeat(" ", boxWidth-10), colorCyan, colorReset)
-		if noSandbox {
-			printWarning(w, "Sandbox is disabled! Process runs without isolation", boxWidth)
-		}
-		for _, warning := range caps.Warnings {
-			printWarning(w, warning, boxWidth)
-		}
-	}
-
-	fmt.Fprintf(w, "%s└%s┘%s\n\n", colorCyan, border, colorReset)
-}
-
-// printField prints a labeled field inside the box
-//
-//nolint:unparam // boxWidth kept as parameter for consistency with other print functions
-func printField(w *os.File, label, value string, boxWidth int) {
-	content := fmt.Sprintf("  %s: %s", label, value)
-	// Truncate if too long
-	if len(content) > boxWidth-2 {
-		content = content[:boxWidth-5] + "..."
-	}
-	padding := boxWidth - len(content)
-	if padding < 0 {
-		padding = 0
-	}
-	_, _ = fmt.Fprintf(w, "%s│%s%s%s%s│%s\n", colorCyan, colorReset, content, strings.Repeat(" ", padding), colorCyan, colorReset)
-}
-
-// printSecCapability prints a sandbox capability with check/cross mark and color
-//
-//nolint:unparam // boxWidth kept as parameter for consistency with other print functions
-func printSecCapability(w *os.File, name string, available bool, boxWidth int) {
-	var mark, color string
-	if available {
-		mark = "✓"
-		color = colorGreen
-	} else {
-		mark = "✗"
-		color = colorRed
-	}
-	// Account for ANSI codes in visual width calculation
-	visualLen := 4 + 1 + len(mark) + 2 + len(name) // "    [" + mark + "] " + name
-	padding := boxWidth - visualLen
-	if padding < 0 {
-		padding = 0
-	}
-	_, _ = fmt.Fprintf(w, "%s│%s%s    [%s%s] %s%s%s%s│%s\n", colorCyan, colorReset, "", color, mark, name, colorReset, strings.Repeat(" ", padding), colorCyan, colorReset)
-}
-
-// printWarning prints a warning line inside the box
-func printWarning(w *os.File, text string, boxWidth int) {
-	// Truncate if too long (account for ANSI codes)
-	if len(text) > boxWidth-10 {
-		text = text[:boxWidth-13] + "..."
-	}
-	visualLen := 4 + 4 + len(text) // "    " + "[!] " + text
-	padding := boxWidth - visualLen
-	if padding < 0 {
-		padding = 0
-	}
-	_, _ = fmt.Fprintf(w, "%s│%s    %s[!] %s%s%s%s│%s\n", colorCyan, colorReset, colorYellow, text, colorReset, strings.Repeat(" ", padding), colorCyan, colorReset)
 }
 
 // loadEnvFile loads environment variables from a file
