@@ -62,7 +62,7 @@ jobs:
         run: |
           STAGING="$(mktemp -d)"
           cp -a . "$STAGING/mcp-${VERSION}"
-          rm -rf "$STAGING/mcp-${VERSION}/.git" "$STAGING/mcp-${VERSION}/debian" "$STAGING/mcp-${VERSION}/.claude"
+          rm -rf "$STAGING/mcp-${VERSION}/.git" "$STAGING/mcp-${VERSION}/debian"
           tar czf "../mcp_${VERSION}.orig.tar.gz" -C "$STAGING" "mcp-${VERSION}"
           rm -rf "$STAGING"
 

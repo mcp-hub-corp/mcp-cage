@@ -99,14 +99,13 @@ STAGING_DIR="$(mktemp -d)"
 STAGING_SRC="$STAGING_DIR/${PACKAGE}-${VERSION}"
 mkdir -p "$STAGING_SRC"
 
-# Copy source files (excluding build artifacts and metadata)
+# Copy source files (excluding VCS metadata and build artifacts)
 rsync -a \
     --exclude='.git' \
     --exclude='debian' \
     --exclude='.DS_Store' \
     --exclude='bin/' \
     --exclude='coverage.out' \
-    --exclude='.claude' \
     --exclude='.gopath' \
     --exclude='.gocache' \
     "$PROJECT_DIR/" "$STAGING_SRC/"
