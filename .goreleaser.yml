@@ -1,10 +1,5 @@
 project_name: mcp-client
 
-before:
-  hooks:
-    - go mod tidy
-    - go test ./...
-
 builds:
   - id: mcp
     main: ./cmd/mcp
@@ -13,9 +8,9 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
-      - -X github.com/security-mcp/mcp-client/internal/cli.Version={{.Version}}
-      - -X github.com/security-mcp/mcp-client/internal/cli.GitCommit={{.Commit}}
-      - -X github.com/security-mcp/mcp-client/internal/cli.BuildDate={{.Date}}
+      - -X github.com/mcp-hub-corp/mcp-client/internal/cli.Version={{.Version}}
+      - -X github.com/mcp-hub-corp/mcp-client/internal/cli.GitCommit={{.Commit}}
+      - -X github.com/mcp-hub-corp/mcp-client/internal/cli.BuildDate={{.Date}}
     goos:
       - linux
       - darwin
@@ -37,8 +32,6 @@ archives:
     files:
       - LICENSE
       - README.md
-      - docs/*.md
-      - docs/*.yaml
 
 checksum:
   name_template: 'checksums.txt'
@@ -66,18 +59,35 @@ changelog:
 
 release:
   github:
-    owner: security-mcp
+    owner: mcp-hub-corp
     name: mcp-client
   draft: false
   prerelease: auto
   mode: replace
   header: |
-    ## mcp-client {{ .Tag }}
-
-    Release of mcp-client {{ .Tag }}.
+    ## mcp {{ .Tag }}
 
     ### Installation
 
-    Download the appropriate binary for your platform below.
+    ```bash
+    brew install mcp-hub-corp/tap/mcp
+    ```
+
+    Or download the appropriate binary for your platform below.
   footer: |
-    **Full Changelog**: https://github.com/security-mcp/mcp-client/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/mcp-hub-corp/mcp-client/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+brews:
+  - name: mcp
+    repository:
+      owner: mcp-hub-corp
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: "https://mcp-hub.info"
+    description: "Run MCP servers without blindly trusting them"
+    license: "MIT"
+    install: |
+      bin.install "mcp"
+    test: |
+      system "#{bin}/mcp", "--version"

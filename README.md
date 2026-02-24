@@ -53,26 +53,32 @@ Packages are analyzed upstream by [MCP Hub Platform](https://mcp-hub.info) for *
 
 ## Install
 
-### Binary (recommended)
+### Homebrew (recommended)
+
+```bash
+brew install mcp-hub-corp/tap/mcp
+```
+
+### Binary
 
 Download from [Releases](https://github.com/mcp-hub-corp/mcp-client/releases/latest):
 
 ```bash
 # macOS (Apple Silicon)
-curl -sSL -o mcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/mcp-darwin-arm64
-chmod +x mcp && sudo mv mcp /usr/local/bin/
+curl -sSL -o mcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/mcp_*_darwin_arm64.tar.gz
+tar xzf mcp_*_darwin_arm64.tar.gz && sudo mv mcp /usr/local/bin/
 
 # macOS (Intel)
-curl -sSL -o mcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/mcp-darwin-amd64
-chmod +x mcp && sudo mv mcp /usr/local/bin/
+curl -sSL -o mcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/mcp_*_darwin_amd64.tar.gz
+tar xzf mcp_*_darwin_amd64.tar.gz && sudo mv mcp /usr/local/bin/
 
 # Linux (amd64)
-curl -sSL -o mcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/mcp-linux-amd64
-chmod +x mcp && sudo mv mcp /usr/local/bin/
+curl -sSL -o mcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/mcp_*_linux_amd64.tar.gz
+tar xzf mcp_*_linux_amd64.tar.gz && sudo mv mcp /usr/local/bin/
 
 # Linux (arm64)
-curl -sSL -o mcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/mcp-linux-arm64
-chmod +x mcp && sudo mv mcp /usr/local/bin/
+curl -sSL -o mcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/mcp_*_linux_arm64.tar.gz
+tar xzf mcp_*_linux_arm64.tar.gz && sudo mv mcp /usr/local/bin/
 ```
 
 ### From source
