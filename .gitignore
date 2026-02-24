@@ -24,3 +24,6 @@ registry.test
 # Build
 dist/
 .out/
+
+# Go vendor (generated during PPA build)
+vendor/

@@ -1,0 +1,7 @@
+mcp (0.1.0-1) unstable; urgency=medium
+
+  * Initial PPA release.
+  * CLI launcher for certified MCP servers.
+  * SHA-256 digest validation, sandboxing, and audit logging.
+
+ -- Dani <cr0hn@cr0hn.com>  Mon, 24 Feb 2026 12:00:00 +0000

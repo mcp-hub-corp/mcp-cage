@@ -1,0 +1,27 @@
+Source: mcp
+Section: devel
+Priority: optional
+Maintainer: Dani <cr0hn@cr0hn.com>
+Build-Depends: debhelper-compat (= 13), golang-go (>= 2:1.22~)
+Standards-Version: 4.6.2
+Homepage: https://mcp-hub.info
+Vcs-Git: https://github.com/mcp-hub-corp/mcp-client.git
+Rules-Requires-Root: no
+
+Package: mcp
+Architecture: any
+Depends: ${misc:Depends}
+Description: CLI launcher for certified MCP servers
+ MCP is a command-line tool that resolves, downloads, validates, and executes
+ MCP (Model Context Protocol) packages from the MCP Hub registry.
+ .
+ It enforces security policies, applies resource limits, and sandboxes
+ processes with platform-specific isolation. Features include:
+ .
+  - Immutable package resolution with SHA-256 digest validation
+  - Content-addressable local cache
+  - Process-level sandboxing (cgroups, namespaces, seccomp on Linux)
+  - Resource limits (CPU, memory, PIDs, file descriptors)
+  - Network default-deny with manifest-controlled allowlists
+  - Security policy enforcement with certification levels
+  - Structured JSON audit logging
