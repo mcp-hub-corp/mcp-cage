@@ -45,13 +45,21 @@ jobs:
             echo "version=${REF_NAME#v}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Import GPG key
+      - name: Import GPG key and configure for CI
         env:
           GPG_PRIVATE_KEY: ${{ secrets.PPA_GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.PPA_GPG_PASSPHRASE }}
         run: |
           echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-          echo "$GPG_PASSPHRASE" | gpg --batch --passphrase-fd 0 --pinentry-mode loopback --sign --armor /dev/null || true
+          # Configure GPG for non-interactive signing (no TTY in CI)
+          mkdir -p ~/.gnupg
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          echo "batch" >> ~/.gnupg/gpg.conf
+          gpgconf --kill gpg-agent
+          # Pre-cache passphrase with gpg-preset-passphrase
+          GPG_KEYGRIP=$(gpg --with-keygrip --list-secret-keys | grep -A1 "sec " | grep Keygrip | awk '{print $3}')
+          /usr/lib/gnupg/gpg-preset-passphrase --preset --passphrase "$GPG_PASSPHRASE" "$GPG_KEYGRIP"
 
       - name: Vendor dependencies
         run: go mod vendor
@@ -84,11 +92,14 @@ jobs:
           # Strip leading whitespace from heredoc (YAML indent)
           sed -i 's/^          //' debian/changelog
 
-      - name: Build source package
+      - name: Build and sign source package
         env:
           GPG_KEY_ID: ${{ secrets.PPA_GPG_KEY_ID }}
+          GPG_PASSPHRASE: ${{ secrets.PPA_GPG_PASSPHRASE }}
         run: |
-          debuild -S -sa -d -k"$GPG_KEY_ID"
+          # Build unsigned, then sign with explicit passphrase
+          debuild -S -sa -d -us -uc
+          echo "$GPG_PASSPHRASE" | debsign -k"$GPG_KEY_ID" -p "gpg --batch --pinentry-mode loopback --passphrase-fd 0" "../mcp_$(dpkg-parsechangelog --show-field Version)_source.changes"
 
       - name: Configure dput
         run: |
