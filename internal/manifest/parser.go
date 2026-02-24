@@ -132,14 +132,14 @@ type hubResources struct {
 }
 
 type hubCertification struct {
-	Level            int              `json:"level"`
-	Score            int              `json:"score"`
-	SecurityScore    int              `json:"security_score"`
-	SupplyChainScore int              `json:"supply_chain_score"`
-	MaturityScore    int              `json:"maturity_score"`
-	Findings         *FindingsSummary `json:"findings,omitempty"`
+	Level            int               `json:"level"`
+	Score            int               `json:"score"`
+	SecurityScore    int               `json:"security_score"`
+	SupplyChainScore int               `json:"supply_chain_score"`
+	MaturityScore    int               `json:"maturity_score"`
+	Findings         *FindingsSummary  `json:"findings,omitempty"`
 	Capabilities     *CapabilitiesInfo `json:"capabilities,omitempty"`
-	Compliance       *ComplianceInfo  `json:"compliance,omitempty"`
+	Compliance       *ComplianceInfo   `json:"compliance,omitempty"`
 }
 
 // FindingsSummary contains a summary of security findings

@@ -11,11 +11,11 @@ import (
 
 func TestNewScorePolicy(t *testing.T) {
 	tests := []struct {
-		name          string
-		minScore      int
-		enforceMode   string
-		expectedMin   int
-		expectedMode  string
+		name         string
+		minScore     int
+		enforceMode  string
+		expectedMin  int
+		expectedMode string
 	}{
 		{"default_no_enforcement", 0, DisabledMode, 0, DisabledMode},
 		{"score_75_strict", 75, StrictMode, 75, StrictMode},

@@ -65,8 +65,8 @@ issues:
         - errcheck
         - gosec
 
-    # Exclude "not implemented yet" error checks in placeholder code
-    - text: "Error return value is not checked"
+    # Exclude errcheck on progress UI (terminal output errors are not actionable)
+    - path: internal/cli/progress\.go
       linters:
         - errcheck
 
