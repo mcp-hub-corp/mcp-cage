@@ -128,23 +128,21 @@ export MCP_REGISTRY_TOKEN=YOUR_TOKEN
 Create `~/.mcp/config.yaml`:
 
 ```yaml
-registry:
-  url: https://registry.mcp-hub.info
+registry_url: "https://registry.mcp-hub.info"
+timeout: 5m
+max_memory: "512M"
+max_cpu: 1000              # millicores (1000 = 1 core)
+log_level: "info"
+
+audit_enabled: true
+audit_log_file: "~/.mcp/audit.log"
 
 policy:
-  min_cert_level: 1           # reject uncertified packages
-  cert_enforcement: strict    # strict | warn | disabled
-  allowed_origins:
+  min_cert_level: 1        # reject uncertified packages (0-3)
+  cert_level_mode: strict  # strict | warn | disabled
+  allowed_origins:         # empty = allow all
     - official
     - verified
-
-executor:
-  default_timeout: 5m
-  max_memory: 512M
-
-audit:
-  enabled: true
-  log_file: ~/.mcp/audit.log
 ```
 
 CLI flags override config. Environment variables use `MCP_` prefix (`MCP_REGISTRY_URL`, `MCP_CACHE_DIR`, etc.).
