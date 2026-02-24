@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -216,6 +217,29 @@ func (p *ProgressUI) ErrorBanner(msg string) {
 	} else {
 		fmt.Fprintf(p.w, "Error: %s\n", msg)
 	}
+}
+
+// ConfirmLowScore prompts the user to confirm execution of a package whose
+// security score is below 80. Returns true if the user confirms, false otherwise.
+// In non-terminal mode (piped stdin), always returns false.
+func (p *ProgressUI) ConfirmLowScore(score int) bool {
+	if !term.IsTerminal(int(os.Stdin.Fd())) {
+		return false
+	}
+
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	fmt.Fprintf(p.w, "\n  %s\u26a0 Security score is %d/100 (below 80). Continue? [y/N]%s ", ansiYellow, score, ansiReset)
+
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		return false
+	}
+
+	answer := strings.TrimSpace(strings.ToLower(input))
+	return answer == "y" || answer == "yes"
 }
 
 // ---------------------------------------------------------------------------

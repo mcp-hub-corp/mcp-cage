@@ -179,6 +179,15 @@ func TestScoreBar(t *testing.T) {
 	}
 }
 
+func TestConfirmLowScore_NonTerminal(t *testing.T) {
+	// When writing to a non-terminal buffer, ConfirmLowScore should always
+	// return false because os.Stdin in tests is not a terminal.
+	var buf bytes.Buffer
+	ui := NewProgressUI(&buf, 6)
+	result := ui.ConfirmLowScore(45)
+	assert.False(t, result, "ConfirmLowScore should return false in non-terminal mode")
+}
+
 func TestCertLevelName(t *testing.T) {
 	tests := []struct {
 		level int

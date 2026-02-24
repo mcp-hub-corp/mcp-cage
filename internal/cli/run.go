@@ -30,6 +30,7 @@ type runCmdFlags struct {
 	envFile   string
 	noCache   bool
 	noSandbox bool
+	trust     bool
 	secretEnv map[string]string
 }
 
@@ -41,6 +42,7 @@ func init() {
 	runCmd.Flags().StringVar(&runFlags.envFile, "env-file", "", "File with environment variables")
 	runCmd.Flags().BoolVar(&runFlags.noCache, "no-cache", false, "Force download without using cache")
 	runCmd.Flags().BoolVar(&runFlags.noSandbox, "no-sandbox", false, "Disable process sandboxing (use with caution)")
+	runCmd.Flags().BoolVar(&runFlags.trust, "trust", false, "Skip interactive confirmation for low-score packages")
 }
 
 // runMCPServer executes an MCP server from a package reference
@@ -512,6 +514,13 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		SandboxCaps: sb.Capabilities(),
 		NoSandbox:   runFlags.noSandbox,
 	})
+
+	// Trust check: warn on low-score packages unless --trust is set
+	if secScore >= 0 && secScore < 80 && !runFlags.trust {
+		if !ui.ConfirmLowScore(secScore) {
+			return fmt.Errorf("security score %d/100 is below 80; use --trust to skip this check", secScore)
+		}
+	}
 
 	// Log execution start
 	packageID := fmt.Sprintf("%s/%s", org, name)
