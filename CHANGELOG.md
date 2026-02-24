@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **2026-02-24**: Ubuntu PPA packaging (`ppa:mcphub/mcp`). Added `debian/` directory with full Debian source packaging (control, rules, copyright, changelog). Added `scripts/ppa-upload.sh` for building and uploading source packages to Launchpad PPA targeting Noble (24.04), Jammy (22.04), and Oracular (24.10). Added `.github/workflows/ppa.yml` for automated PPA uploads on git tag push. Users can install with `sudo add-apt-repository ppa:mcphub/mcp && sudo apt install mcp`.
+
 ### Changed
 
 - **2026-02-24**: Switched release pipeline from manual `go build` to GoReleaser v2. Adds Homebrew tap auto-publishing to `mcp-hub-corp/homebrew-tap`. Install with `brew install mcp-hub-corp/tap/mcp`. Fixed GitHub org reference from `security-mcp` to `mcp-hub-corp` in `.goreleaser.yml`. Updated README install section with Homebrew as recommended method.
