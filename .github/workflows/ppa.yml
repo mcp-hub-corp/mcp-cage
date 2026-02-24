@@ -48,18 +48,18 @@ jobs:
       - name: Import GPG key and configure for CI
         env:
           GPG_PRIVATE_KEY: ${{ secrets.PPA_GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.PPA_GPG_PASSPHRASE }}
         run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-          # Configure GPG for non-interactive signing (no TTY in CI)
+          # Configure GPG for non-interactive signing before importing
           mkdir -p ~/.gnupg
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          chmod 700 ~/.gnupg
+          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+          echo "pinentry-mode loopback" > ~/.gnupg/gpg.conf
           echo "batch" >> ~/.gnupg/gpg.conf
+          echo "no-tty" >> ~/.gnupg/gpg.conf
           gpgconf --kill gpg-agent
-          # Pre-cache passphrase with gpg-preset-passphrase
-          GPG_KEYGRIP=$(gpg --with-keygrip --list-secret-keys | grep -A1 "sec " | grep Keygrip | awk '{print $3}')
-          /usr/lib/gnupg/gpg-preset-passphrase --preset --passphrase "$GPG_PASSPHRASE" "$GPG_KEYGRIP"
+          # Import key
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
 
       - name: Vendor dependencies
         run: go mod vendor
@@ -97,9 +97,17 @@ jobs:
           GPG_KEY_ID: ${{ secrets.PPA_GPG_KEY_ID }}
           GPG_PASSPHRASE: ${{ secrets.PPA_GPG_PASSPHRASE }}
         run: |
-          # Build unsigned, then sign with explicit passphrase
+          # Build unsigned source package
           debuild -S -sa -d -us -uc
-          echo "$GPG_PASSPHRASE" | debsign -k"$GPG_KEY_ID" -p "gpg --batch --pinentry-mode loopback --passphrase-fd 0" "../mcp_$(dpkg-parsechangelog --show-field Version)_source.changes"
+          # Create GPG wrapper that provides passphrase non-interactively
+          cat > /tmp/gpg-pass.sh << 'WRAPPER'
+          #!/bin/bash
+          echo "$GPG_PASSPHRASE" | exec gpg --batch --pinentry-mode loopback --passphrase-fd 0 "$@"
+          WRAPPER
+          sed -i 's/^          //' /tmp/gpg-pass.sh
+          chmod +x /tmp/gpg-pass.sh
+          # Sign with debsign using the wrapper
+          debsign -p /tmp/gpg-pass.sh -k"$GPG_KEY_ID" "../mcp_$(dpkg-parsechangelog --show-field Version)_source.changes"
 
       - name: Configure dput
         run: |
