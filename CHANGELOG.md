@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **2026-02-24**: Switched release pipeline from manual `go build` to GoReleaser v2. Adds Homebrew tap auto-publishing to `mcp-hub-corp/homebrew-tap`. Install with `brew install mcp-hub-corp/tap/mcp`. Fixed GitHub org reference from `security-mcp` to `mcp-hub-corp` in `.goreleaser.yml`. Updated README install section with Homebrew as recommended method.
+
+### Changed (previous)
+
 - **2026-02-24**: CLI output refresh — Docker Build style. Steps now align vertically with fixed-width description columns. Info card replaced box-drawing borders with compact indented text (Score, Origin, SHA, Format on minimal lines). Sandbox capabilities shown inline (`net:✓ fs:✓ exec:✓`). Subprocess output (uv, pip, etc.) hidden by default, shown with `--verbose`. Executor "starting STDIO executor" log demoted to Debug level.
 
 - **2026-02-24**: Refactored `run.go` to use `ProgressUI` from `progress.go` for Docker-style step progress output. Replaced old `printSecurityBanner`, `printSecuritySummary`, `printField`, `printSecCapability`, `printWarning` functions and ANSI constants with the new `ProgressUI` API. The run command now shows 6 progress steps (Resolving package, Checking policies, Fetching manifest, Fetching bundle, Extracting bundle, Preparing execution) with spinner, cache-skip, and failure indicators. `InfoCard` is always displayed (no longer gated by `--verbose`). Added SIGINT/SIGTERM signal handling for graceful shutdown with audit logging.
