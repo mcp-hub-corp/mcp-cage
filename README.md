@@ -53,7 +53,17 @@ Packages are analyzed upstream by [MCP Hub Platform](https://mcp-hub.info) for *
 
 ## Install
 
-### Homebrew (recommended)
+### Ubuntu / Debian (apt)
+
+```bash
+sudo add-apt-repository ppa:mcphub/mcp
+sudo apt update
+sudo apt install mcp
+```
+
+Supports Ubuntu Noble (24.04 LTS) and Jammy (22.04 LTS).
+
+### Homebrew (macOS)
 
 ```bash
 brew install mcp-hub-corp/tap/mcp
