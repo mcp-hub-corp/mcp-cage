@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **2026-02-24**: Ubuntu PPA packaging (`ppa:mcphub/mcp`). Added `debian/` directory with full Debian source packaging (control, rules, copyright, changelog). Added `scripts/ppa-upload.sh` for building and uploading source packages to Launchpad PPA targeting Noble (24.04), Jammy (22.04), and Oracular (24.10). Added `.github/workflows/ppa.yml` for automated PPA uploads on git tag push. Users can install with `sudo add-apt-repository ppa:mcphub/mcp && sudo apt install mcp`.
+- **2026-02-25**: Ubuntu PPA packaging (`ppa:mcphub/mcp`). Added `debian/` directory with full Debian source packaging (control, rules, copyright, changelog). Added `scripts/ppa-upload.sh` for building and uploading source packages to Launchpad PPA targeting Noble (24.04 LTS) and Jammy (22.04 LTS). Added `.github/workflows/ppa.yml` for automated PPA uploads on git tag push. Orig tarball is built once and shared across releases to ensure identical checksums. Users can install with `sudo add-apt-repository ppa:mcphub/mcp && sudo apt install mcp`.
 
 ### Changed
 

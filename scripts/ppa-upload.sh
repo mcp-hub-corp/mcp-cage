@@ -24,7 +24,7 @@ set -euo pipefail
 
 PACKAGE="mcp"
 PPA="ppa:mcphub/mcp"
-RELEASES=("noble" "jammy" "oracular")
+RELEASES=("noble" "jammy")
 MAINTAINER="Dani <cr0hn@cr0hn.com>"
 
 # --- Parse arguments ---
