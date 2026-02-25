@@ -12,12 +12,10 @@ on:
         type: string
 
 jobs:
-  ppa-upload:
+  prepare:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        release: [noble, jammy, oracular]
-
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,11 +24,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24'
-
-      - name: Install packaging tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y devscripts debhelper dput gpg
 
       - name: Determine version
         id: version
@@ -45,22 +38,6 @@ jobs:
             echo "version=${REF_NAME#v}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Import GPG key and configure for CI
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.PPA_GPG_PRIVATE_KEY }}
-        run: |
-          # Configure GPG for non-interactive signing before importing
-          mkdir -p ~/.gnupg
-          chmod 700 ~/.gnupg
-          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
-          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
-          echo "pinentry-mode loopback" > ~/.gnupg/gpg.conf
-          echo "batch" >> ~/.gnupg/gpg.conf
-          echo "no-tty" >> ~/.gnupg/gpg.conf
-          gpgconf --kill gpg-agent
-          # Import key
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-
       - name: Vendor dependencies
         run: go mod vendor
 
@@ -71,12 +48,63 @@ jobs:
           STAGING="$(mktemp -d)"
           cp -a . "$STAGING/mcp-${VERSION}"
           rm -rf "$STAGING/mcp-${VERSION}/.git" "$STAGING/mcp-${VERSION}/debian"
-          tar czf "../mcp_${VERSION}.orig.tar.gz" -C "$STAGING" "mcp-${VERSION}"
+          tar czf "mcp_${VERSION}.orig.tar.gz" -C "$STAGING" "mcp-${VERSION}"
           rm -rf "$STAGING"
+          echo "Tarball SHA256: $(sha256sum "mcp_${VERSION}.orig.tar.gz")"
+
+      - name: Upload orig tarball as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: orig-tarball
+          path: mcp_${{ steps.version.outputs.version }}.orig.tar.gz
+          retention-days: 1
+
+  ppa-upload:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        release: [noble, jammy]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y devscripts debhelper dput gpg
+
+      - name: Import GPG key and configure for CI
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.PPA_GPG_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+          echo "pinentry-mode loopback" > ~/.gnupg/gpg.conf
+          echo "batch" >> ~/.gnupg/gpg.conf
+          echo "no-tty" >> ~/.gnupg/gpg.conf
+          gpgconf --kill gpg-agent
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+
+      - name: Download orig tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: orig-tarball
+          path: ..
+
+      - name: Verify tarball
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          echo "Tarball SHA256: $(sha256sum "../mcp_${VERSION}.orig.tar.gz")"
+          ls -la "../mcp_${VERSION}.orig.tar.gz"
 
       - name: Generate changelog
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ needs.prepare.outputs.version }}
           RELEASE: ${{ matrix.release }}
         run: |
           RELEASE_VERSION="${VERSION}-1~${RELEASE}1"
@@ -89,7 +117,6 @@ jobs:
 
            -- Dani <cr0hn@cr0hn.com>  ${DATE}
           EOF
-          # Strip leading whitespace from heredoc (YAML indent)
           sed -i 's/^          //' debian/changelog
 
       - name: Build and sign source package
@@ -97,16 +124,13 @@ jobs:
           GPG_KEY_ID: ${{ secrets.PPA_GPG_KEY_ID }}
           GPG_PASSPHRASE: ${{ secrets.PPA_GPG_PASSPHRASE }}
         run: |
-          # Build unsigned source package
           debuild -S -sa -d -us -uc
-          # Create GPG wrapper that provides passphrase non-interactively
           cat > /tmp/gpg-pass.sh << 'WRAPPER'
           #!/bin/bash
           echo "$GPG_PASSPHRASE" | exec gpg --batch --pinentry-mode loopback --passphrase-fd 0 "$@"
           WRAPPER
           sed -i 's/^          //' /tmp/gpg-pass.sh
           chmod +x /tmp/gpg-pass.sh
-          # Sign with debsign using the wrapper
           debsign -p /tmp/gpg-pass.sh -k"$GPG_KEY_ID" "../mcp_$(dpkg-parsechangelog --show-field Version)_source.changes"
 
       - name: Configure dput
@@ -123,7 +147,7 @@ jobs:
 
       - name: Upload to PPA
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ needs.prepare.outputs.version }}
           RELEASE: ${{ matrix.release }}
         run: |
           RELEASE_VERSION="${VERSION}-1~${RELEASE}1"
