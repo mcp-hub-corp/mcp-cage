@@ -1,12 +1,12 @@
 # mcp-client Configuration Example
 #
 # This file demonstrates all available configuration options.
-# Copy to ~/.mcp/config.yaml and customize for your environment.
+# Copy to ~/.smcp/config.yaml and customize for your environment.
 #
 # Priority (highest to lowest):
 # 1. Command-line flags (--registry, --cache-dir, etc.)
 # 2. Environment variables (MCP_REGISTRY_URL, MCP_CACHE_DIR, etc.)
-# 3. Configuration file (~/.mcp/config.yaml)
+# 3. Configuration file (~/.smcp/config.yaml)
 # 4. Default values
 
 registry:
@@ -23,7 +23,7 @@ registry:
   # Generate token in registry web UI
   # Can also be set via MCP_REGISTRY_TOKEN environment variable
   # Or login with: mcp login --token YOUR_TOKEN
-  # Note: Token is NOT stored in this file; use ~/.mcp/auth.json instead
+  # Note: Token is NOT stored in this file; use ~/.smcp/auth.json instead
   # token: your-secret-token-here
 
   # Certificate verification for HTTPS connections
@@ -34,8 +34,8 @@ registry:
 cache:
   # Directory where downloaded packages are stored
   # Uses content-addressable storage (organized by digest)
-  # Default: ~/.mcp/cache
-  dir: ~/.mcp/cache
+  # Default: ~/.smcp/cache
+  dir: ~/.smcp/cache
 
   # Maximum total size of cache
   # Supports suffixes: B, KB, MB, GB
@@ -121,7 +121,7 @@ security:
 
       # Load secrets from file
       - type: file
-        path: ~/.mcp/secrets.yaml
+        path: ~/.smcp/secrets.yaml
         # File format:
         # secrets:
         #   DATABASE_PASSWORD: "actual-password"
@@ -134,8 +134,8 @@ audit:
   enabled: true
 
   # Location of audit log file
-  # Default: ~/.mcp/audit.log
-  log_file: ~/.mcp/audit.log
+  # Default: ~/.smcp/audit.log
+  log_file: ~/.smcp/audit.log
 
   # Log format: json or text
   # json: Structured logs for SIEM/ELK integration
@@ -265,7 +265,7 @@ advanced:
 # registry:
 #   url: https://registry.example.com
 # cache:
-#   dir: ~/.mcp/cache
+#   dir: ~/.smcp/cache
 # executor:
 #   default_timeout: 5m
 #   max_memory: 512M
@@ -332,13 +332,13 @@ advanced:
 # 3. Token Storage
 #    Do NOT store sensitive tokens in this file
 #    Instead, use:
-#    - mcp login --token YOUR_TOKEN  (stores in ~/.mcp/auth.json)
+#    - mcp login --token YOUR_TOKEN  (stores in ~/.smcp/auth.json)
 #    - MCP_REGISTRY_TOKEN env var (only in trusted contexts)
 #    - CI/CD secret management
 
 # 4. File Permissions
-#    ~/.mcp/config.yaml should be readable by user only
-#    chmod 600 ~/.mcp/config.yaml
+#    ~/.smcp/config.yaml should be readable by user only
+#    chmod 600 ~/.smcp/config.yaml
 
 # 5. Platform-Specific Limitations
 #    - macOS: Network isolation not available (no netns)

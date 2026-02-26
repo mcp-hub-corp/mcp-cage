@@ -1,5 +1,5 @@
 # Build artifacts
-/mcp
+/smcp
 *.exe
 *.test
 *.out
@@ -26,7 +26,7 @@ docs/
 .github/
 
 # Cache and local config
-.mcp/
+.smcp/
 *.log
 
 # OS
