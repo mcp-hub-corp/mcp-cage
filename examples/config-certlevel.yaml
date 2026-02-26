@@ -1,12 +1,12 @@
 # Example MCP Client configuration with certification level policy enforcement
-# Location: ~/.mcp/config.yaml
+# Location: ~/.smcp/config.yaml
 
 registry:
   url: https://registry.mcp-hub.info
   timeout: 30s
 
 cache:
-  dir: ~/.mcp/cache
+  dir: ~/.smcp/cache
   max_size: 10GB
   ttl: 720h  # 30 days
 
@@ -57,7 +57,7 @@ policy:
 
 audit:
   enabled: true
-  log_file: ~/.mcp/audit.log
+  log_file: ~/.smcp/audit.log
   format: json
 
 log:

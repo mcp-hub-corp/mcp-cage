@@ -151,7 +151,7 @@ FALLBACK: Use timeout + kill if OS limit mechanisms unavailable.
 ### 6. Mandatory Audit Logging
 ```
 RULE: Every execution logged (start, end, exit code, duration).
-ACTION: Write to ~/.mcp/audit.log with structured format.
+ACTION: Write to ~/.smcp/audit.log with structured format.
 CONSTRAINT: Never skip audit in normal operation.
 ```
 
@@ -495,7 +495,7 @@ Process can create files in:
 
 ### Log Location
 
-- File: `~/.mcp/audit.log`
+- File: `~/.smcp/audit.log`
 - Permissions: `0600` (read/write owner only)
 - Rotation: Configurable size/time based
 
@@ -581,7 +581,7 @@ Else:
    - Restrict environment variables to minimum necessary
 
 4. **Audit Log Monitoring**
-   - Rotate and archive `~/.mcp/audit.log` regularly
+   - Rotate and archive `~/.smcp/audit.log` regularly
    - Monitor for unexpected packages/digests
    - Alert on repeated failures or resource limit hits
 

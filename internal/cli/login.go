@@ -129,7 +129,7 @@ func interactiveLogin(logger *slog.Logger, registryURL string, tokenStorage *reg
 	}
 
 	fmt.Printf("\nSuccessfully authenticated as %s\n", username)
-	fmt.Printf("Token saved to: ~/.mcp/auth.json\n")
+	fmt.Printf("Token saved to: ~/.smcp/auth.json\n")
 	fmt.Printf("Token expires at: %s\n", expiresAt.Format(time.RFC3339))
 
 	logger.Info("login successful", slog.String("username", username), slog.String("registry", registryURL), slog.Time("expires_at", expiresAt))
