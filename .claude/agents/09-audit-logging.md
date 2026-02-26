@@ -29,7 +29,7 @@ Implementar un sistema de auditoría local que registre todas las ejecuciones de
    - Redactar tokens completos, loguear solo últimos 4 chars: `"token": "...xyz"`
 
 4. **Persistencia**
-   - Guardar en `~/.mcp/audit.log` (rotación opcional)
+   - Guardar en `~/.smcp/audit.log` (rotación opcional)
    - Append-only (no modificar logs históricos)
    - Permisos `0600` (solo owner puede leer)
 
@@ -39,7 +39,7 @@ Implementar un sistema de auditoría local que registre todas las ejecuciones de
    - Retention policy configurable (ej: 30 días)
 
 6. **Query de logs**
-   - Comando `mcp audit ls` para listar ejecuciones recientes
+   - Comando `smcp audit ls` para listar ejecuciones recientes
    - Filtros: por package, por fecha, por exit code
    - Output: tabla o JSON (`--json`)
 
@@ -201,7 +201,7 @@ Implementar un sistema de auditoría local que registre todas las ejecuciones de
 - [ ] Todos los eventos de auditoría definidos y documentados
 - [ ] Redacción de secretos funciona correctamente
 - [ ] Rotación de logs implementada (opcional pero recomendado)
-- [ ] Comando `mcp audit ls` funcional
+- [ ] Comando `smcp audit ls` funcional
 - [ ] Tests verifican que NO se loguean valores de secretos
 - [ ] Documentación de formato de eventos
 
@@ -218,7 +218,7 @@ go test -v ./internal/audit/... -run TestNoSecretsInLogs
 golangci-lint run ./internal/audit/...
 
 # Verificar formato JSON
-jq . ~/.mcp/audit.log > /dev/null
+jq . ~/.smcp/audit.log > /dev/null
 ```
 
 ## Cosas Prohibidas
@@ -237,7 +237,7 @@ jq . ~/.mcp/audit.log > /dev/null
 - **Recibe de**: executor (eventos de ejecución)
 - **Recibe de**: registry-integration (eventos de descarga)
 - **Recibe de**: manifest-validator (eventos de validación)
-- **Recibe de**: cli-ux (comando `mcp audit`)
+- **Recibe de**: cli-ux (comando `smcp audit`)
 
 ## Notas Adicionales
 
@@ -250,7 +250,7 @@ jq . ~/.mcp/audit.log > /dev/null
 {"timestamp":"2026-01-18T10:32:00Z","type":"validation.failed","digest":"sha256:xyz789","error":"digest mismatch: expected sha256:xyz789, got sha256:aaa111"}
 ```
 
-### Output de `mcp audit ls`
+### Output de `smcp audit ls`
 
 ```
 TIMESTAMP                  PACKAGE              VERSION  PID    EXIT  DURATION
@@ -285,7 +285,7 @@ time.Now().Format(time.RFC3339)
 ```yaml
 audit:
   enabled: true
-  log_file: ~/.mcp/audit.log
+  log_file: ~/.smcp/audit.log
   rotation:
     max_size_mb: 100
     max_backups: 3

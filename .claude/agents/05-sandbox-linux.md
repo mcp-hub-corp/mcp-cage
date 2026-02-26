@@ -171,7 +171,7 @@ GOOS=linux go build ./internal/sandbox/
 - **Provee a**: executor (configuración de sandbox aplicada a `exec.Cmd`)
 - **Recibe de**: architect (interfaz `Sandbox`)
 - **Recibe de**: manifest-validator (políticas de security)
-- **Coordina con**: cli-ux (comando `mcp doctor` debe reportar capabilities)
+- **Coordina con**: cli-ux (comando `smcp doctor` debe reportar capabilities)
 
 ## Notas Adicionales
 
@@ -211,7 +211,7 @@ if err := cmd.Run(); err != nil {
 }
 ```
 
-### Output de `mcp doctor` en Linux
+### Output de `smcp doctor` en Linux
 
 ```
 [✓] OS: linux (amd64)

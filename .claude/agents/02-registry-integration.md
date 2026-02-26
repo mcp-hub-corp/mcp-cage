@@ -31,8 +31,8 @@ Implementar el cliente HTTP para comunicarse con mcp-registry. Resolver referenc
 
 5. **Autenticación**
    - JWT Bearer: `Authorization: Bearer <token>`
-   - Cargar token desde `~/.mcp/auth.json` o env var `MCP_REGISTRY_TOKEN`
-   - Implementar comando `mcp login` para guardar token
+   - Cargar token desde `~/.smcp/auth.json` o env var `MCP_REGISTRY_TOKEN`
+   - Implementar comando `smcp login` para guardar token
 
 6. **Retries y backoff**
    - Retry en 5xx con exponential backoff (3 intentos)
@@ -90,7 +90,7 @@ Implementar el cliente HTTP para comunicarse con mcp-registry. Resolver referenc
    }
 
    type FileAuthStore struct {
-       path string // ~/.mcp/auth.json
+       path string // ~/.smcp/auth.json
    }
    ```
 
@@ -116,7 +116,7 @@ Implementar el cliente HTTP para comunicarse con mcp-registry. Resolver referenc
 - [ ] Cliente HTTP implementado con todas las features (auth, redirects, retry)
 - [ ] Validación de digest funciona correctamente
 - [ ] Tests de integración con httptest mock pasan
-- [ ] Comando `mcp login` guarda token en `~/.mcp/auth.json`
+- [ ] Comando `smcp login` guarda token en `~/.smcp/auth.json`
 - [ ] Coverage >80% en módulo registry
 - [ ] Documentación de API en comentarios GoDoc
 
@@ -151,7 +151,7 @@ go build ./internal/registry/...
 - **Provee a**: cache-store (URLs y datos descargados)
 - **Provee a**: manifest-validator (contenido de manifest descargado)
 - **Recibe de**: architect (interfaces `Client`, `AuthStore`)
-- **Recibe de**: cli-ux (comando `mcp login`)
+- **Recibe de**: cli-ux (comando `smcp login`)
 
 ## Notas Adicionales
 
@@ -174,7 +174,7 @@ go build ./internal/registry/...
 5. Si no coincide, return ErrDigestMismatch
 ```
 
-### Estructura de `~/.mcp/auth.json`
+### Estructura de `~/.smcp/auth.json`
 
 ```json
 {

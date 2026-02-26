@@ -16,7 +16,7 @@ Files are stored by their content hash (digest), not by filename. This ensures:
 ### Directory Structure
 
 ```
-~/.mcp/cache/
+~/.smcp/cache/
 ├── manifests/
 │   ├── sha256:abc123.../
 │   │   ├── manifest.json
@@ -41,7 +41,7 @@ Files are stored by their content hash (digest), not by filename. This ensures:
 
 ### Metadata File Structure
 
-**~/.mcp/cache/manifests/sha256:abc123.../metadata.json:**
+**~/.smcp/cache/manifests/sha256:abc123.../metadata.json:**
 ```json
 {
   "digest": "sha256:abc123...",
@@ -54,7 +54,7 @@ Files are stored by their content hash (digest), not by filename. This ensures:
 }
 ```
 
-**~/.mcp/cache/bundles/sha256:def456.../metadata.json:**
+**~/.smcp/cache/bundles/sha256:def456.../metadata.json:**
 ```json
 {
   "digest": "sha256:def456...",
@@ -1088,16 +1088,16 @@ func (cc *CachedRegistryClient) DownloadManifest(ctx context.Context, org, diges
 
 ```bash
 # List all cached manifests
-find ~/.mcp/cache/manifests -name "manifest.json" | wc -l
+find ~/.smcp/cache/manifests -name "manifest.json" | wc -l
 
 # List all cached bundles with size
-find ~/.mcp/cache/bundles -name "bundle.tar.gz" -exec du -h {} \;
+find ~/.smcp/cache/bundles -name "bundle.tar.gz" -exec du -h {} \;
 
 # Check metadata for a digest
-cat ~/.mcp/cache/manifests/sha256:abc123.../metadata.json | jq .
+cat ~/.smcp/cache/manifests/sha256:abc123.../metadata.json | jq .
 
 # Total cache size
-du -sh ~/.mcp/cache/
+du -sh ~/.smcp/cache/
 ```
 
 ### Debug Commands in Code

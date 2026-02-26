@@ -175,7 +175,7 @@ Implementar límites de recursos para procesos MCP en Windows usando Job Objects
 - [ ] Timeout funciona (TerminateJobObject)
 - [ ] Cleanup libera job handle y tmpdir
 - [ ] Tests en Windows pasan (GitHub Actions Windows runner)
-- [ ] `mcp doctor` reporta capabilities de Windows
+- [ ] `smcp doctor` reporta capabilities de Windows
 - [ ] Documentación `docs/SECURITY.md` actualizada
 
 ## Checks Automáticos
@@ -205,12 +205,12 @@ GOOS=windows go build ./internal/sandbox/
 - **Provee a**: executor (configuración de sandbox aplicada a `exec.Cmd`)
 - **Recibe de**: architect (interfaz `Sandbox`)
 - **Recibe de**: manifest-validator (políticas de security)
-- **Coordina con**: cli-ux (comando `mcp doctor`)
+- **Coordina con**: cli-ux (comando `smcp doctor`)
 - **Coordina con**: docs (actualizar `SECURITY.md`)
 
 ## Notas Adicionales
 
-### Output de `mcp doctor` en Windows
+### Output de `smcp doctor` en Windows
 
 ```
 [✓] OS: windows (amd64)

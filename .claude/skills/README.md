@@ -50,8 +50,8 @@ Key topics:
 **Use when:** Debugging failures, analyzing logs, tracing system calls, verifying cache integrity
 
 **Key commands:**
-- mcp doctor (system capabilities)
-- mcp cache ls (artifact inspection)
+- smcp doctor (system capabilities)
+- smcp cache ls (artifact inspection)
 - strace -e open,read,write (trace syscalls)
 - jq 'select(.level=="ERROR")' (parse JSON logs)
 
@@ -149,7 +149,7 @@ Key topics:
 
 Key topics:
 - Content-addressable design principles (immutability, deduplication, integrity)
-- Directory structure: ~/.mcp/cache/{manifests,bundles}/sha256:*/
+- Directory structure: ~/.smcp/cache/{manifests,bundles}/sha256:*/
 - Metadata file structure (digest, size, timestamps, package info)
 - Store interface definition with core operations
 - Atomic write pattern: temp file → validate → rename (prevents corruption)
@@ -204,8 +204,8 @@ When debugging failures:
 2. **Enable logging** → Use --log-level debug and JSON format
 3. **Analyze logs** → Parse with jq commands from debugging-production.md
 4. **Trace calls** → Use strace/dtrace commands from debugging-production.md
-5. **Verify cache** → Use mcp cache ls and integrity checks
-6. **Check system** → Run mcp doctor to verify capabilities
+5. **Verify cache** → Use smcp cache ls and integrity checks
+6. **Check system** → Run smcp doctor to verify capabilities
 
 ### CI/CD Implementation Workflow
 
@@ -263,7 +263,7 @@ When reviewing:
 **debugging-production.md** connections:
 - **→ ci-cd-mcp-client.md**: Automated testing catches issues before production
 - **→ golang-performance.md**: Profile when diagnosing performance issues
-- **→ mcp doctor**: First command to run (coverage in debugging-production.md)
+- **→ smcp doctor**: First command to run (coverage in debugging-production.md)
 
 ### CI/CD Connections
 

@@ -594,12 +594,12 @@ func TestExtractBundle_EnforcesRestrictivePermissions(t *testing.T) {
 ### Integration Tests (end-to-end)
 ```bash
 # Test with real bundles
-mcp run test/bomb@1.0.0 → FAIL (exceeds size limit)
-mcp run test/traversal@1.0.0 → FAIL (path traversal)
-mcp run test/symlink@1.0.0 → FAIL (symlinks not allowed)
+smcp run test/bomb@1.0.0 → FAIL (exceeds size limit)
+smcp run test/traversal@1.0.0 → FAIL (path traversal)
+smcp run test/symlink@1.0.0 → FAIL (symlinks not allowed)
 
 # Real bundle should work
-mcp run acme/hello-world@1.0.0 → SUCCESS
+smcp run acme/hello-world@1.0.0 → SUCCESS
 ```
 
 ### Boundary Conditions
@@ -747,7 +747,7 @@ find /tmp/extracted-dir/ -print0 | strings | grep -E '^[^[:print:]]'
 
 ### Trace extraction with strace (Linux)
 ```bash
-strace -e openat,open,mkdir ./mcp run test@1.0.0 2>&1 | grep -E 'bundle|extracted'
+strace -e openat,open,mkdir ./smcp run test@1.0.0 2>&1 | grep -E 'bundle|extracted'
 # Verify all opens/mkdirs are within destDir
 ```
 

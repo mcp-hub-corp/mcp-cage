@@ -50,7 +50,7 @@ timestamp := time.Now().UTC().Format(time.RFC3339Nano)
 ### File Format
 
 ```
-~/.mcp/audit.log
+~/.smcp/audit.log
 
 File permissions: 0600 (owner read/write only)
 Append-only: always append, never truncate or modify
@@ -336,7 +336,7 @@ func (rl *RedactedLogger) Log(level slog.Level, msg string, args ...interface{})
 
 ```bash
 # Unix/Linux/macOS
-ls -la ~/.mcp/audit.log
+ls -la ~/.smcp/audit.log
 -rw------- 1 dani staff 102400 Jan 18 10:30 /Users/dani/.mcp/audit.log
 
 # Permissions: 0600 (owner read/write, no others)

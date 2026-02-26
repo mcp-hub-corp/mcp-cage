@@ -32,7 +32,7 @@ Expert reference guide for understanding mcp-client system design, module intera
 - All auth tokens stored securely (0600 perms)
 - Config can be re-loaded without restart
 
-**Inputs:** `~/.mcp/config.yaml`, `MCP_*` env vars, CLI flags
+**Inputs:** `~/.smcp/config.yaml`, `MCP_*` env vars, CLI flags
 **Outputs:** `Config` struct with all settings
 
 ---
@@ -72,7 +72,7 @@ Expert reference guide for understanding mcp-client system design, module intera
 - `eviction.go` - LRU eviction when max size exceeded
 
 **Guarantees:**
-- Directory structure: `~/.mcp/cache/manifests/sha256:abc.../manifest.json`
+- Directory structure: `~/.smcp/cache/manifests/sha256:abc.../manifest.json`
 - File-level locks prevent concurrent writes to same digest
 - Partial downloads cleaned up on error
 - Metadata (size, last-accessed, path) tracked for eviction
@@ -216,7 +216,7 @@ Size limits: manifest ≤ 10MB
 - `event.go` - Event types (start, end, error)
 
 **Guarantees:**
-- All execs logged to `~/.mcp/audit.log` (0600 perms)
+- All execs logged to `~/.smcp/audit.log` (0600 perms)
 - Secrets never logged (redacted or name-only)
 - Format: newline-delimited JSON for easy parsing
 - Immutable once written (append-only)
@@ -269,7 +269,7 @@ Size limits: manifest ≤ 10MB
 ┌─────────────────────────────────────────────────────────────────┐
 │ Cache (store.go, locking.go)                                    │
 │ - Validate digests                                              │
-│ - Store in content-addressable dir (~/.mcp/cache/)            │
+│ - Store in content-addressable dir (~/.smcp/cache/)            │
 │ - Return cached paths for future use                           │
 └────────────────────────┬────────────────────────────────────────┘
                          │ Manifest path, bundle path
@@ -355,7 +355,7 @@ audit.Log("end", process.ExitCode, process.Duration)
 
 ## Execution Workflow: 12-Step Flow
 
-Complete workflow from `mcp run org/name@version` to process completion:
+Complete workflow from `smcp run org/name@version` to process completion:
 
 ### Step 1: Parse CLI Arguments
 **Who:** `cli/run.go`
@@ -378,7 +378,7 @@ Actions:
 Input: RunCommand, home directory
 Output: Config{Registry: "...", Cache: "...", Limits: ...}
 Actions:
-  - Load ~/.mcp/config.yaml (if exists)
+  - Load ~/.smcp/config.yaml (if exists)
   - Load MCP_* environment variables
   - Apply CLI flag overrides
   - Merge with hardcoded defaults
@@ -419,7 +419,7 @@ Error Cases:
 Input: Manifest digest "sha256:abc123..."
 Output: (manifest_path, hit_bool) or error
 Actions:
-  - Check if ~/.mcp/cache/manifests/sha256:abc123.../manifest.json exists
+  - Check if ~/.smcp/cache/manifests/sha256:abc123.../manifest.json exists
   - Verify file size and hash (paranoid double-check)
   - Update last-accessed timestamp for eviction
   - Return path if valid, else report miss
@@ -532,7 +532,7 @@ Examples:
 Input: Bundle digest "sha256:def456..."
 Output: (bundle_path, hit_bool) or error
 Actions:
-  - Check if ~/.mcp/cache/bundles/sha256:def456.../bundle.tar.gz exists
+  - Check if ~/.smcp/cache/bundles/sha256:def456.../bundle.tar.gz exists
   - Verify file size and hash
   - Return path if valid
 
@@ -607,7 +607,7 @@ Actions:
 
   12a. Log START event
     → timestamp, package, digest, entrypoint, limits (values redacted)
-    → write to ~/.mcp/audit.log (append-only JSON)
+    → write to ~/.smcp/audit.log (append-only JSON)
 
   12b. Extract bundle
     → tar.gz → temp directory OR embedded execution
@@ -811,7 +811,7 @@ Clear hierarchy ensures predictable configuration resolution:
 ```
 Priority 4 (Lowest): Hardcoded defaults
 ↑
-Priority 3: ~/.mcp/config.yaml (file)
+Priority 3: ~/.smcp/config.yaml (file)
 ↑
 Priority 2: MCP_* environment variables (env)
 ↑
@@ -830,7 +830,7 @@ executor:
   default_timeout: 5m
 ```
 
-**File override (~/.mcp/config.yaml):**
+**File override (~/.smcp/config.yaml):**
 ```yaml
 executor:
   max_memory: 1G
@@ -845,7 +845,7 @@ export MCP_TIMEOUT=30s
 
 **CLI override:**
 ```bash
-mcp run acme/test@1.0.0 --timeout 60s --max-memory 2G
+smcp run acme/test@1.0.0 --timeout 60s --max-memory 2G
 ```
 
 **Final resolved config:**
@@ -863,16 +863,16 @@ Some settings can be overridden per-execution:
 
 ```bash
 # Use different registry for this run
-mcp run acme/test@1.0.0 --registry https://custom.registry.com
+smcp run acme/test@1.0.0 --registry https://custom.registry.com
 
 # Increase timeout for slow server
-mcp run acme/slow-tool@1.0.0 --timeout 30m
+smcp run acme/slow-tool@1.0.0 --timeout 30m
 
 # Pass environment file
-mcp run acme/tool@1.0.0 --env-file ./prod.env
+smcp run acme/tool@1.0.0 --env-file ./prod.env
 
 # Add secret (not exposed in process env, only passed to manifest allowlist)
-mcp run acme/tool@1.0.0 --secret API_KEY=$APIKEY
+smcp run acme/tool@1.0.0 --secret API_KEY=$APIKEY
 ```
 
 ---
@@ -890,7 +890,7 @@ Layer 1: CLI
 Layer 2: Config
   Input error from file reader
     ↓ Wrap with context
-  Output: "Failed to load config: permission denied: ~/.mcp/config.yaml"
+  Output: "Failed to load config: permission denied: ~/.smcp/config.yaml"
 
 Layer 3: Registry
   Input network error from HTTP client
@@ -1054,7 +1054,7 @@ func (s *LinuxSandbox) Apply(policy *Policy, limits *Limits) error {
 
 **Error Handling:**
 - Sandbox fails early if limits invalid (validation happens in policy layer)
-- Some policies unsupported on some OS (documented with mcp doctor)
+- Some policies unsupported on some OS (documented with smcp doctor)
 
 ---
 
@@ -1232,7 +1232,7 @@ func NewSandbox(limits *Limits) Sandbox {
 func TestFreeBSDSandbox_RctlLimits(t *testing.T) { ... }
 ```
 
-4. Update `mcp doctor`:
+4. Update `smcp doctor`:
 ```go
 // cli/doctor.go
 case "freebsd":
@@ -1245,15 +1245,15 @@ case "freebsd":
 
 ## Common Workflows
 
-### Workflow 1: mcp run (Execute)
+### Workflow 1: smcp run (Execute)
 
 ```bash
-mcp run acme/hello-world@1.2.3
+smcp run acme/hello-world@1.2.3
 ```
 
 **Steps:**
 1. Parse CLI flags
-2. Load config (~/.mcp/config.yaml)
+2. Load config (~/.smcp/config.yaml)
 3. Resolve reference (registry.resolve)
 4. Cache check/download manifest
 5. Cache check/download bundle
@@ -1278,14 +1278,14 @@ mcp run acme/hello-world@1.2.3
 
 ---
 
-### Workflow 2: mcp pull (Pre-download)
+### Workflow 2: smcp pull (Pre-download)
 
 ```bash
-mcp pull acme/hello-world@1.2.3
+smcp pull acme/hello-world@1.2.3
 ```
 
 **Steps:**
-1-6. Same as `mcp run`
+1-6. Same as `smcp run`
 7-12. Skip (no execution)
 
 **Output:**
@@ -1298,39 +1298,39 @@ mcp pull acme/hello-world@1.2.3
 
 ---
 
-### Workflow 3: mcp login (Authenticate)
+### Workflow 3: smcp login (Authenticate)
 
 ```bash
-mcp login --token <JWT>
+smcp login --token <JWT>
 ```
 
 **Steps:**
 1. Parse token
 2. Validate JWT structure (no validation of claims, just structure)
-3. Store in ~/.mcp/auth.json (0600 perms)
+3. Store in ~/.smcp/auth.json (0600 perms)
 4. Load in subsequent runs (config layer)
 
 **Output:**
 ```
 [2026-01-18T10:30:00Z] Authenticating with registry...
-[2026-01-18T10:30:00Z] Token saved to ~/.mcp/auth.json
+[2026-01-18T10:30:00Z] Token saved to ~/.smcp/auth.json
 ```
 
 **Subsequent runs:**
-- Config loader reads ~/.mcp/auth.json
+- Config loader reads ~/.smcp/auth.json
 - Registry client adds Authorization: Bearer <token> header
 - Private packages resolved and downloaded
 
 ---
 
-### Workflow 4: mcp cache ls (Inspect Cache)
+### Workflow 4: smcp cache ls (Inspect Cache)
 
 ```bash
-mcp cache ls
+smcp cache ls
 ```
 
 **Steps:**
-1. Read ~/.mcp/cache/ directory structure
+1. Read ~/.smcp/cache/ directory structure
 2. List all manifests and bundles
 3. Show size + last-accessed time
 4. Output in table format
@@ -1345,15 +1345,15 @@ manifest  sha256:ghi789...                        3.8 KB    1 week ago
 
 ---
 
-### Workflow 5: mcp cache rm (Evict)
+### Workflow 5: smcp cache rm (Evict)
 
 ```bash
-mcp cache rm sha256:ghi789...
+smcp cache rm sha256:ghi789...
 ```
 
 **Steps:**
 1. Validate digest format
-2. Delete from ~/.mcp/cache/
+2. Delete from ~/.smcp/cache/
 3. Update metadata
 
 **Output:**
@@ -1363,7 +1363,7 @@ Removed manifest sha256:ghi789... (freed 3.8 KB)
 
 **Or bulk:**
 ```bash
-mcp cache rm --all
+smcp cache rm --all
 ```
 
 Output:
@@ -1373,10 +1373,10 @@ Removed 3 artifacts (freed 20.3 MB)
 
 ---
 
-### Workflow 6: mcp doctor (Diagnose)
+### Workflow 6: smcp doctor (Diagnose)
 
 ```bash
-mcp doctor
+smcp doctor
 ```
 
 **Steps:**
@@ -1412,12 +1412,12 @@ Limitations:
   ⚠ CAP_NET_ADMIN not available: can't create network namespaces
 
 Storage:
-  Cache Directory: ~/.mcp/cache (writable, 12.3 MB used)
-  Auth File: ~/.mcp/auth.json (readable, 1 token registered)
+  Cache Directory: ~/.smcp/cache (writable, 12.3 MB used)
+  Auth File: ~/.smcp/auth.json (readable, 1 token registered)
 
 Recommendations:
   • For full network isolation, run with CAP_NET_ADMIN or in rootless container
-  • Monitor cache size, run 'mcp cache rm --all' to free space
+  • Monitor cache size, run 'smcp cache rm --all' to free space
 ```
 
 ---
@@ -1444,8 +1444,8 @@ Exit Code: 2
 
 **User actions:**
 - Check internet: `ping registry.example.com`
-- Retry with custom registry: `mcp run acme/test@1.0.0 --registry https://mirror.com`
-- Increase timeout: `mcp run acme/test@1.0.0 --registry-timeout 60s` (if added to config)
+- Retry with custom registry: `smcp run acme/test@1.0.0 --registry https://mirror.com`
+- Increase timeout: `smcp run acme/test@1.0.0 --registry-timeout 60s` (if added to config)
 
 ---
 

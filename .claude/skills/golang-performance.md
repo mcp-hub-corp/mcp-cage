@@ -295,7 +295,7 @@ func init() {
 
 Then capture memory profile:
 ```bash
-# While mcp is running
+# While smcp is running
 curl http://localhost:6060/debug/pprof/heap > heap.prof
 go tool pprof heap.prof
 ```

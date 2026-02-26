@@ -39,7 +39,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - Obtained via login endpoint or external IdP
 - Expires at `exp` claim
 - Must be refreshed before expiry
-- Store securely in `~/.mcp/auth.json`
+- Store securely in `~/.smcp/auth.json`
 
 **Implementation:**
 ```go

@@ -36,7 +36,7 @@ Implementar límites de recursos para procesos MCP en macOS. Dado que macOS care
    - Documentar limitación
 
 6. **Documentación de limitaciones**
-   - Actualizar `mcp doctor` para reportar capabilities limitadas en macOS
+   - Actualizar `smcp doctor` para reportar capabilities limitadas en macOS
    - Crear sección en `docs/SECURITY.md` explicando qué NO funciona en macOS
 
 ## Entregables
@@ -142,7 +142,7 @@ Implementar límites de recursos para procesos MCP en macOS. Dado que macOS care
 - [ ] Timeout funciona con kill tree (SIGTERM → SIGKILL)
 - [ ] Directorio temporal creado y limpiado
 - [ ] Tests en macOS pasan (GitHub Actions macOS runner)
-- [ ] `mcp doctor` reporta limitaciones de macOS
+- [ ] `smcp doctor` reporta limitaciones de macOS
 - [ ] Documentación `docs/SECURITY.md` actualizada
 - [ ] No hay warnings de features no soportadas sin contexto
 
@@ -173,12 +173,12 @@ GOOS=darwin go build ./internal/sandbox/
 - **Provee a**: executor (configuración de sandbox aplicada a `exec.Cmd`)
 - **Recibe de**: architect (interfaz `Sandbox`)
 - **Recibe de**: manifest-validator (políticas de security)
-- **Coordina con**: cli-ux (comando `mcp doctor`)
+- **Coordina con**: cli-ux (comando `smcp doctor`)
 - **Coordina con**: docs (actualizar `SECURITY.md`)
 
 ## Notas Adicionales
 
-### Output de `mcp doctor` en macOS
+### Output de `smcp doctor` en macOS
 
 ```
 [✓] OS: darwin (arm64)

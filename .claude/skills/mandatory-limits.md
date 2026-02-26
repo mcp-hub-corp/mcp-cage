@@ -145,7 +145,7 @@ var DefaultLimits = Limits{
 ### Override Examples
 
 ```yaml
-# ~/.mcp/config.yaml - higher limits for production
+# ~/.smcp/config.yaml - higher limits for production
 executor:
   max_cpu: 2000        # 2 cores for compute-heavy server
   max_memory: 2048M    # 2 GB for large dataset processing
@@ -156,7 +156,7 @@ executor:
 
 ```bash
 # CLI override for one-off execution
-mcp run acme/slow-analyzer@1.0.0 \
+smcp run acme/slow-analyzer@1.0.0 \
   --max-cpu 4000 \
   --max-memory 4G \
   --timeout 30m
@@ -279,7 +279,7 @@ func (c *Config) Validate() error {
 **Error pattern:**
 ```
 [ERROR] Config validation failed: max_memory must be non-negative, got: -512
-[INFO] Check ~/.mcp/config.yaml for errors
+[INFO] Check ~/.smcp/config.yaml for errors
 Exit Code: 1
 ```
 
@@ -424,7 +424,7 @@ func (cmd *RunCommand) ValidateFlags() error {
 **Error pattern:**
 ```
 [ERROR] Invalid --timeout: 0s (must be positive)
-[INFO] Usage: mcp run <package> --timeout 5m
+[INFO] Usage: smcp run <package> --timeout 5m
 
 Exit Code: 1
 ```
@@ -973,12 +973,12 @@ process.Start()
 
 ```go
 // WRONG
-config := loadYAML("~/.mcp/config.yaml")
+config := loadYAML("~/.smcp/config.yaml")
 // Assume YAML is valid
 startProcess(config.Limits)
 
 // RIGHT
-config := loadYAML("~/.mcp/config.yaml")
+config := loadYAML("~/.smcp/config.yaml")
 if err := config.Validate(); err != nil {
   log.Warn("Config validation failed: %v, using defaults", err)
   config = defaultConfig()
@@ -1024,7 +1024,7 @@ All validation errors should be clear and actionable:
 
 ```
 [ERROR] Config validation failed: max_cpu must be non-negative, got: -1000
-[INFO] Check ~/.mcp/config.yaml line 12
+[INFO] Check ~/.smcp/config.yaml line 12
 Exit Code: 1
 ```
 
@@ -1073,7 +1073,7 @@ Exit Code: 1
 
 ```
 [WARN] Failed to create network namespace, network will not be isolated
-[INFO] This is OK for non-hostile packages, run 'mcp doctor' for details
+[INFO] This is OK for non-hostile packages, run 'smcp doctor' for details
 ```
 
 ---

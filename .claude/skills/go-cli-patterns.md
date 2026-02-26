@@ -2,7 +2,7 @@
 
 ## Overview
 
-This skill covers best practices for building command-line interfaces in Go using Cobra (CLI framework) and Viper (configuration management). Tailored to the mcp-client project: `mcp run`, `mcp pull`, `mcp cache`, etc.
+This skill covers best practices for building command-line interfaces in Go using Cobra (CLI framework) and Viper (configuration management). Tailored to the mcp-client project: `smcp run`, `smcp pull`, `smcp cache`, etc.
 
 ---
 
@@ -37,7 +37,7 @@ import (
 
 // Root command
 var rootCmd = &cobra.Command{
-	Use:   "mcp",
+	Use:   "smcp",
 	Short: "MCP Client - launcher for Model Context Protocol servers",
 	Long: `mcp-client is a launcher for MCP servers.
 
@@ -50,7 +50,7 @@ var runCmd = &cobra.Command{
 	Use:     "run <org/name@version>",
 	Short:   "Execute an MCP server",
 	Long:    "Download and execute an MCP server package.",
-	Example: "mcp run acme/hello-world@1.2.3",
+	Example: "smcp run acme/hello-world@1.2.3",
 	Args:    cobra.ExactArgs(1), // Require exactly 1 argument
 	RunE:    runCommand,          // Async error handling
 }
@@ -60,7 +60,7 @@ var pullCmd = &cobra.Command{
 	Use:     "pull <org/name@version>",
 	Short:   "Pre-download an MCP package",
 	Long:    "Download package without executing (useful for CI/CD).",
-	Example: "mcp pull acme/tool@1.0.0",
+	Example: "smcp pull acme/tool@1.0.0",
 	Args:    cobra.ExactArgs(1),
 	RunE:    pullCommand,
 }
@@ -113,7 +113,7 @@ func init() {
 	)
 	rootCmd.PersistentFlags().String(
 		"cache-dir",
-		"~/.mcp/cache",
+		"~/.smcp/cache",
 		"Cache directory for manifests and bundles",
 	)
 	rootCmd.PersistentFlags().Bool(
@@ -208,7 +208,7 @@ func LoadConfig() (*Config, error) {
 
 	// Add multiple config paths (searched in order)
 	viper.AddConfigPath(".")                    // Current directory
-	viper.AddConfigPath(expandHome("~/.mcp"))   // User home
+	viper.AddConfigPath(expandHome("~/.smcp"))   // User home
 	viper.AddConfigPath("/etc/mcp")             // System wide
 
 	// Set environment variable prefix
@@ -240,7 +240,7 @@ func LoadConfig() (*Config, error) {
 func setDefaults() {
 	viper.SetDefault("registry.url", "https://registry.mcp-hub.info")
 	viper.SetDefault("registry.timeout", "30s")
-	viper.SetDefault("cache.dir", "~/.mcp/cache")
+	viper.SetDefault("cache.dir", "~/.smcp/cache")
 	viper.SetDefault("cache.max_size", "10GB")
 	viper.SetDefault("executor.timeout", "5m")
 	viper.SetDefault("executor.max_cpu", 1000)
@@ -274,14 +274,14 @@ Lower to higher priority:
 // 1. Default in code:
 viper.SetDefault("registry", "https://default-registry.com")
 
-// 2. In config file (~/.mcp/config.yaml):
+// 2. In config file (~/.smcp/config.yaml):
 // registry: https://file-registry.com
 
 // 3. Environment variable:
 // $ export MCP_REGISTRY=https://env-registry.com
 
 // 4. CLI flag:
-// $ mcp --registry https://flag-registry.com run ...
+// $ smcp --registry https://flag-registry.com run ...
 
 // Final value: https://flag-registry.com (CLI flag wins)
 ```
@@ -574,16 +574,16 @@ Package references can be specified in three formats:
 
 	Example: `
   # Run with default registry
-  mcp run acme/hello-world@1.2.3
+  smcp run acme/hello-world@1.2.3
 
   # Run with custom timeout
-  mcp run acme/tool@latest --timeout 60s
+  smcp run acme/tool@latest --timeout 60s
 
   # Run with environment variables
-  mcp run acme/tool@1.0.0 --env-file .env --secret API_KEY=secret
+  smcp run acme/tool@1.0.0 --env-file .env --secret API_KEY=secret
 
   # Force fresh download (skip cache)
-  mcp run acme/tool@1.0.0 --no-cache`,
+  smcp run acme/tool@1.0.0 --no-cache`,
 
 	Args: cobra.ExactArgs(1),
 	RunE: runCommand,
@@ -623,14 +623,14 @@ func init() {
 The `Example` field automatically appears in help:
 
 ```bash
-$ mcp run --help
+$ smcp run --help
 ...
 Examples:
   # Run with default registry
-  mcp run acme/hello-world@1.2.3
+  smcp run acme/hello-world@1.2.3
 
   # Run with custom timeout
-  mcp run acme/tool@latest --timeout 60s
+  smcp run acme/tool@latest --timeout 60s
 ```
 
 ---
@@ -643,7 +643,7 @@ Version is typically injected at build time:
 
 ```bash
 # Build with version
-go build -ldflags="-X github.com/security-mcp/mcp-client/cmd.Version=1.0.0" ./cmd/mcp
+go build -ldflags="-X github.com/security-mcp/mcp-client/cmd.Version=1.0.0" ./cmd/smcp
 ```
 
 ### Setting Version in Code
@@ -659,7 +659,7 @@ import (
 var Version = "dev" // Set by build flags
 
 var rootCmd = &cobra.Command{
-	Use:     "mcp",
+	Use:     "smcp",
 	Short:   "MCP Client",
 	Version: Version,
 }
@@ -680,10 +680,10 @@ func main() {
 ### Using Version in Output
 
 ```bash
-$ mcp --version
-mcp version 0.1.0
+$ smcp --version
+smcp version 0.1.0
 
-$ mcp doctor
+$ smcp doctor
 MCP Client v0.1.0
 ```
 
@@ -697,7 +697,7 @@ MCP Client v0.1.0
 func TestRunCommand_SuccessfulExecution(t *testing.T) {
 	// Run the CLI as a subprocess
 	cmd := exec.Command(
-		"go", "run", "cmd/mcp/main.go",
+		"go", "run", "cmd/smcp/main.go",
 		"run", "acme/test@1.0.0",
 	)
 
@@ -820,7 +820,7 @@ Good:
 var runCmd = &cobra.Command{
 	Use:     "run <org/name@version>",
 	Short:   "Execute an MCP server",
-	Example: "mcp run acme/hello-world@1.2.3\nmcp run acme/tool@latest --timeout 60s",
+	Example: "smcp run acme/hello-world@1.2.3\nsmcp run acme/tool@latest --timeout 60s",
 }
 ```
 
@@ -880,9 +880,9 @@ var runCmd = &cobra.Command{
 }
 
 // Users can now type:
-// mcp run acme/hello@1.0.0
-// mcp exec acme/hello@1.0.0
-// mcp execute acme/hello@1.0.0
+// smcp run acme/hello@1.0.0
+// smcp exec acme/hello@1.0.0
+// smcp execute acme/hello@1.0.0
 ```
 
 ### Hidden Commands
