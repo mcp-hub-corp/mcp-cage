@@ -46,17 +46,17 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           STAGING="$(mktemp -d)"
-          cp -a . "$STAGING/mcp-${VERSION}"
-          rm -rf "$STAGING/mcp-${VERSION}/.git" "$STAGING/mcp-${VERSION}/debian"
-          tar czf "mcp_${VERSION}.orig.tar.gz" -C "$STAGING" "mcp-${VERSION}"
+          cp -a . "$STAGING/smcp-${VERSION}"
+          rm -rf "$STAGING/smcp-${VERSION}/.git" "$STAGING/smcp-${VERSION}/debian"
+          tar czf "smcp_${VERSION}.orig.tar.gz" -C "$STAGING" "smcp-${VERSION}"
           rm -rf "$STAGING"
-          echo "Tarball SHA256: $(sha256sum "mcp_${VERSION}.orig.tar.gz")"
+          echo "Tarball SHA256: $(sha256sum "smcp_${VERSION}.orig.tar.gz")"
 
       - name: Upload orig tarball as artifact
         uses: actions/upload-artifact@v4
         with:
           name: orig-tarball
-          path: mcp_${{ steps.version.outputs.version }}.orig.tar.gz
+          path: smcp_${{ steps.version.outputs.version }}.orig.tar.gz
           retention-days: 1
 
   ppa-upload:
@@ -99,8 +99,8 @@ jobs:
         env:
           VERSION: ${{ needs.prepare.outputs.version }}
         run: |
-          echo "Tarball SHA256: $(sha256sum "../mcp_${VERSION}.orig.tar.gz")"
-          ls -la "../mcp_${VERSION}.orig.tar.gz"
+          echo "Tarball SHA256: $(sha256sum "../smcp_${VERSION}.orig.tar.gz")"
+          ls -la "../smcp_${VERSION}.orig.tar.gz"
 
       - name: Generate changelog
         env:
@@ -110,7 +110,7 @@ jobs:
           RELEASE_VERSION="${VERSION}-1~${RELEASE}1"
           DATE=$(date -R)
           cat > debian/changelog <<EOF
-          mcp (${RELEASE_VERSION}) ${RELEASE}; urgency=medium
+          smcp (${RELEASE_VERSION}) ${RELEASE}; urgency=medium
 
             * Release v${VERSION} for ${RELEASE}.
             * CLI launcher for certified MCP servers.
@@ -131,15 +131,15 @@ jobs:
           WRAPPER
           sed -i 's/^          //' /tmp/gpg-pass.sh
           chmod +x /tmp/gpg-pass.sh
-          debsign -p /tmp/gpg-pass.sh -k"$GPG_KEY_ID" "../mcp_$(dpkg-parsechangelog --show-field Version)_source.changes"
+          debsign -p /tmp/gpg-pass.sh -k"$GPG_KEY_ID" "../smcp_$(dpkg-parsechangelog --show-field Version)_source.changes"
 
       - name: Configure dput
         run: |
           cat > ~/.dput.cf <<'DPUT'
-          [mcphub-mcp]
+          [mcphub-smcp]
           fqdn = ppa.launchpad.net
           method = ftp
-          incoming = ~mcphub/mcp/ubuntu/
+          incoming = ~mcphub/smcp/ubuntu/
           login = anonymous
           allow_unsigned_uploads = 0
           DPUT
@@ -151,4 +151,4 @@ jobs:
           RELEASE: ${{ matrix.release }}
         run: |
           RELEASE_VERSION="${VERSION}-1~${RELEASE}1"
-          dput mcphub-mcp "../mcp_${RELEASE_VERSION}_source.changes"
+          dput mcphub-smcp "../smcp_${RELEASE_VERSION}_source.changes"

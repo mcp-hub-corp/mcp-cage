@@ -14,7 +14,7 @@ MCP packages can have one of three origin types:
 
 ## Configuration
 
-Origin policy is configured in the `~/.mcp/config.yaml` file:
+Origin policy is configured in the `~/.smcp/config.yaml` file:
 
 ```yaml
 policy:
@@ -55,7 +55,7 @@ policy:
 
 ### Policy Enforcement
 
-When you run an MCP package with `mcp run org/name@version`, the client:
+When you run an MCP package with `smcp run org/name@version`, the client:
 
 1. Resolves the package from the registry
 2. Retrieves the origin field from the registry response
@@ -186,11 +186,11 @@ go test ./internal/policy/... -v
 go test ./internal/cli/... -run TestOriginPolicy -v
 
 # Build
-go build ./cmd/mcp
+go build ./cmd/smcp
 
 # Create test config
-mkdir -p ~/.mcp
-cat > ~/.mcp/config.yaml << EOF
+mkdir -p ~/.smcp
+cat > ~/.smcp/config.yaml << EOF
 policy:
   allowed_origins:
     - official
@@ -198,10 +198,10 @@ policy:
 EOF
 
 # Try running a community package (should fail)
-./mcp run community/test@1.0.0
+./smcp run community/test@1.0.0
 
 # Try running an official package (should succeed)
-./mcp run official/hello@1.0.0
+./smcp run official/hello@1.0.0
 ```
 
 ## Documentation

@@ -22,8 +22,8 @@ set -euo pipefail
 #     bash -c "apt update && apt install -y devscripts debhelper dput golang-go gpg && /src/scripts/ppa-upload.sh 0.2.0 --upload"
 # =============================================================================
 
-PACKAGE="mcp"
-PPA="ppa:mcphub/mcp"
+PACKAGE="smcp"
+PPA="ppa:mcphub/smcp"
 RELEASES=("noble" "jammy")
 MAINTAINER="Dani <cr0hn@cr0hn.com>"
 
@@ -78,7 +78,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
     fi
 fi
 
-echo "=== MCP PPA Builder ==="
+echo "=== SMCP PPA Builder ==="
 echo "Package:  $PACKAGE"
 echo "Version:  $VERSION"
 echo "PPA:      $PPA"

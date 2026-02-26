@@ -71,7 +71,7 @@ policy:
 
 ### Global Configuration
 
-Set in `~/.mcp/config.yaml`:
+Set in `~/.smcp/config.yaml`:
 
 ```yaml
 policy:
@@ -92,7 +92,7 @@ export MCP_POLICY_MIN_CERT_LEVEL=2
 export MCP_POLICY_CERT_LEVEL_MODE=strict
 
 # Then run MCP
-mcp run acme/tool@latest
+smcp run acme/tool@latest
 ```
 
 ### Environment-Specific Overrides (Future)
@@ -120,7 +120,7 @@ policy:
 
 Usage (future implementation):
 ```bash
-MCP_ENV=prod mcp run acme/tool@latest
+MCP_ENV=prod smcp run acme/tool@latest
 ```
 
 ## Usage Examples
@@ -168,7 +168,7 @@ Highest security: only official MCPs with runtime certification.
 ### Check Certification Level
 ```bash
 # Run will now validate cert_level from resolve response
-mcp run acme/tool@1.0.0
+smcp run acme/tool@1.0.0
 
 # If cert_level is below minimum and mode is strict:
 # Error: certification level policy violation: ...
@@ -176,8 +176,8 @@ mcp run acme/tool@1.0.0
 
 ### Verify Policy Configuration
 ```bash
-# Via mcp doctor (future enhancement)
-mcp doctor --check-policy
+# Via smcp doctor (future enhancement)
+smcp doctor --check-policy
 
 # Shows current policy settings:
 # Policy enforcement mode: strict
@@ -305,7 +305,7 @@ environments:
     min_cert_level: 2
 ```
 
-Usage: `MCP_ENV=prod mcp run acme/tool@latest`
+Usage: `MCP_ENV=prod smcp run acme/tool@latest`
 
 ### Per-Package Exceptions
 ```yaml
@@ -318,13 +318,13 @@ policy:
 
 ### Dry-Run Mode
 ```bash
-mcp run --dry-run --check-policy acme/tool@latest
+smcp run --dry-run --check-policy acme/tool@latest
 # Shows what would happen without actually executing
 ```
 
 ### Compliance Reporting
 ```bash
-mcp policy report --format=json
+smcp policy report --format=json
 # Generates JSON report of policy enforcement history
 ```
 
@@ -350,7 +350,7 @@ mcp policy report --format=json
 **Check:**
 1. Is `cert_level_mode` set to `disabled`? (Default)
 2. Is `min_cert_level` set to 0? (No minimum)
-3. Run `mcp doctor --check-policy` to verify current policy
+3. Run `smcp doctor --check-policy` to verify current policy
 
 ## References
 

@@ -183,7 +183,7 @@ func (s *DarwinSandbox) Apply(cmd *exec.Cmd, limits *policy.ExecutionLimits) err
 4. The child process gets system defaults (effectively unlimited)
 
 **Impact:**
-- `mcp doctor` reports resource limits as available — this is a **false positive**
+- `smcp doctor` reports resource limits as available — this is a **false positive**
 - Users believe they are protected when they are not
 - All resource limit configurations (`max_cpu`, `max_memory`, `max_pids`, `max_fds`) have no effect on macOS
 
@@ -200,11 +200,11 @@ Only **one** control is functional on macOS:
 To verify the rlimit bug yourself:
 
 ```bash
-# 1. Run mcp doctor — it will (incorrectly) report limits as available
-mcp doctor
+# 1. Run smcp doctor — it will (incorrectly) report limits as available
+smcp doctor
 
 # 2. Run an MCP server with strict limits
-mcp run acme/test@1.0.0 --max-memory 64M --max-cpu 100
+smcp run acme/test@1.0.0 --max-memory 64M --max-cpu 100
 
 # 3. Inside the MCP server, check actual limits:
 python3 -c "
@@ -241,7 +241,7 @@ Integrate `sandbox-exec` as the primary sandboxing mechanism on macOS:
 - `NetworkIsolation: false` (not implemented)
 - `FilesystemIsolation: false` (not implemented)
 
-`mcp doctor` must clearly warn users that resource limits are not effective on macOS.
+`smcp doctor` must clearly warn users that resource limits are not effective on macOS.
 
 ### P1: cgo rlimit Wrapper
 

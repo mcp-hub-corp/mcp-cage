@@ -362,7 +362,7 @@ Tests verify:
 **Solution:**
 ```bash
 # Option 1: Run as root
-sudo mcp run my-app@1.0.0
+sudo smcp run my-app@1.0.0
 
 # Option 2: Grant CAP_NET_ADMIN to binary (not recommended)
 sudo setcap cap_net_admin=ep ./mcp-launcher
@@ -383,7 +383,7 @@ ls /sys/fs/cgroup/cgroup.controllers  # cgroups v2
 ls /sys/fs/cgroup/cpu                # cgroups v1
 
 # Run with debug logging to see what happened
-MCP_LOG_LEVEL=debug mcp run my-app@1.0.0
+MCP_LOG_LEVEL=debug smcp run my-app@1.0.0
 
 # Check logs for:
 # "cgroups v2 detected and available"

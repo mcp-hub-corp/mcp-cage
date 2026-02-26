@@ -25,7 +25,7 @@ var (
 
 // rootCmd represents the base command
 var rootCmd = &cobra.Command{
-	Use:   "mcp",
+	Use:   "smcp",
 	Short: "MCP Client - Launcher for MCP servers",
 	Long: `mcp is a CLI tool for executing MCP (Model Context Protocol) servers.
 It downloads, validates, and executes MCP packages from a compatible registry.`,
@@ -66,7 +66,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Output in JSON format")
 
 	// Version template
-	rootCmd.SetVersionTemplate(fmt.Sprintf("mcp version %s\ncommit: %s\nbuilt: %s\n", Version, GitCommit, BuildDate))
+	rootCmd.SetVersionTemplate(fmt.Sprintf("smcp version %s\ncommit: %s\nbuilt: %s\n", Version, GitCommit, BuildDate))
 
 	// Add subcommands
 	rootCmd.AddCommand(loginCmd)

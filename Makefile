@@ -1,7 +1,7 @@
 .PHONY: build test lint fmt clean install help
 
 # Binary name
-BINARY=mcp
+BINARY=smcp
 
 # Build variables
 VERSION ?= dev
@@ -19,7 +19,7 @@ help: ## Show this help message
 
 build: ## Build the mcp binary
 	@echo "Building $(BINARY)..."
-	go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/mcp
+	go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/smcp
 
 test: ## Run tests
 	@echo "Running tests..."
@@ -57,7 +57,7 @@ clean: ## Clean build artifacts
 
 install: build ## Install the binary to $GOPATH/bin
 	@echo "Installing $(BINARY)..."
-	go install -ldflags "$(LDFLAGS)" ./cmd/mcp
+	go install -ldflags "$(LDFLAGS)" ./cmd/smcp
 
 tidy: ## Run go mod tidy
 	@echo "Running go mod tidy..."

@@ -68,7 +68,7 @@ Understanding where artifacts come from is critical for working on this codebase
 
 ```
 Developer
-    |  mcp push / git commit
+    |  smcp push / git commit
     v
 [mcp-hub]  ──AMQP: ANALYZE job──>  [mcp-scan worker]
     |                                     |
@@ -86,7 +86,7 @@ Developer
 
 Step by step:
 
-1. **Developer pushes code** to mcp-hub (Git repo, webhook, or `mcp push` CLI upload)
+1. **Developer pushes code** to mcp-hub (Git repo, webhook, or `smcp push` CLI upload)
 2. **Hub-worker uploads tarball** to S3 and publishes an ANALYZE job to AMQP
 3. **Scan-worker runs mcp-scan** — 14 vulnerability classes (A-N): injection, exfiltration, privilege escalation, resource abuse, etc.
 4. **Results return via AMQP** — hub-worker downloads results, runs controls mapping, scoring, and snapshot building
@@ -109,7 +109,7 @@ When modifying client code, remember: the cert_level, origin, and digest metadat
 - Security policy enforcement: certification level, origin filtering, environment filtering, subprocess control
 - Structured JSON audit logging with secret redaction
 - STDIO transport for MCP servers (HTTP transport planned)
-- Package publishing via `mcp push` to MCP Hub (currently hidden/disabled — under development)
+- Package publishing via `smcp push` to MCP Hub (currently hidden/disabled — under development)
 
 ---
 
@@ -128,16 +128,16 @@ When modifying client code, remember: the cert_level, origin, and digest metadat
 
 | Command | Description |
 |---------|-------------|
-| `mcp run <ref>` | Execute an MCP server from a package reference |
-| `mcp pull <ref>` | Pre-download a package without executing (useful for CI/CD) |
-| `mcp info <ref>` | Display package manifest details |
-| `mcp login` | Authenticate with the registry (interactive or token-based) |
-| `mcp logout` | Remove stored authentication credentials |
-| `mcp cache ls` | List cached artifacts |
-| `mcp cache rm` | Remove cached artifacts (by digest or `--all`) |
-| `mcp doctor` | Diagnose system sandbox capabilities |
+| `smcp run <ref>` | Execute an MCP server from a package reference |
+| `smcp pull <ref>` | Pre-download a package without executing (useful for CI/CD) |
+| `smcp info <ref>` | Display package manifest details |
+| `smcp login` | Authenticate with the registry (interactive or token-based) |
+| `smcp logout` | Remove stored authentication credentials |
+| `smcp cache ls` | List cached artifacts |
+| `smcp cache rm` | Remove cached artifacts (by digest or `--all`) |
+| `smcp doctor` | Diagnose system sandbox capabilities |
 
-> **Note:** `mcp push` exists in the codebase but is currently hidden/disabled. It is not registered in the CLI command tree. Do not expose it without explicit instruction.
+> **Note:** `smcp push` exists in the codebase but is currently hidden/disabled. It is not registered in the CLI command tree. Do not expose it without explicit instruction.
 
 ---
 
@@ -148,18 +148,18 @@ When modifying client code, remember: the cert_level, origin, and digest metadat
 make build
 
 # Check system capabilities
-./mcp doctor
+./smcp doctor
 
 # Pull and run a package
-./mcp pull acme/hello-world@1.2.3
-./mcp run acme/hello-world@1.2.3
+./smcp pull acme/hello-world@1.2.3
+./smcp run acme/hello-world@1.2.3
 ```
 
 ---
 
 ## Configuration
 
-**Config file:** `~/.mcp/config.yaml`
+**Config file:** `~/.smcp/config.yaml`
 
 Key sections: `registry` (URL, timeout), `cache` (directory, max size, TTL), `executor` (default timeout, resource limits), `security` (network deny, subprocess control), `audit` (log file, format), `policy` (cert level enforcement, allowed origins).
 
@@ -175,7 +175,7 @@ Key sections: `registry` (URL, timeout), `cache` (directory, max size, TTL), `ex
 
 **CLI flags** override both config file and environment variables. Use `--registry`, `--cache-dir`, `--verbose`, `--json`.
 
-**Auth tokens** are stored in `~/.mcp/auth.json` with `0600` permissions.
+**Auth tokens** are stored in `~/.smcp/auth.json` with `0600` permissions.
 
 ---
 
@@ -246,7 +246,7 @@ internal/
 
 | Target | Description |
 |--------|-------------|
-| `make build` | Build the `mcp` binary |
+| `make build` | Build the `smcp` binary |
 | `make test` | Run all tests with race detection and coverage |
 | `make test-coverage` | Generate HTML coverage report |
 | `make lint` | Run golangci-lint |
@@ -275,10 +275,10 @@ Tests include unit, integration, benchmark, fuzz, and E2E tests. Platform-specif
 ## Gotchas
 
 - Linux sandbox tests require root or cgroups v2 delegation; skip with `-short` flag if unavailable
-- macOS and Windows cannot provide network isolation; `mcp doctor` reports these limitations
-- Binary name is `mcp` (not `mcp-client`); built to `./mcp` by default
+- macOS and Windows cannot provide network isolation; `smcp doctor` reports these limitations
+- Binary name is `smcp` (not `mcp-client`); built to `./smcp` by default
 - Registry must be running and accessible for `pull`/`run` commands to work
-- Auth tokens stored in `~/.mcp/auth.json` with 0600 perms; token expiry is not auto-refreshed
+- Auth tokens stored in `~/.smcp/auth.json` with 0600 perms; token expiry is not auto-refreshed
 - `push` command is hidden/disabled — the code exists but is not registered in the CLI
 - CGO_ENABLED=0 by default for cross-platform builds
 

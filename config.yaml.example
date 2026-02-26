@@ -1,11 +1,11 @@
 # Example configuration for mcp-client
-# Place this file at ~/.mcp/config.yaml
+# Place this file at ~/.smcp/config.yaml
 
 # Registry URL
 registry_url: "https://registry.mcp-hub.info"
 
 # Cache directory for downloaded artifacts
-cache_dir: "~/.mcp/cache"
+cache_dir: "~/.smcp/cache"
 
 # Default timeout for MCP execution
 timeout: 5m
@@ -21,7 +21,7 @@ log_level: "info"    # Options: debug, info, warn, error
 
 # Audit logging
 audit_enabled: true
-audit_log_file: "~/.mcp/audit.log"
+audit_log_file: "~/.smcp/audit.log"
 
 # Default limits (ALWAYS applied, cannot be disabled)
 # These are mandatory safety defaults

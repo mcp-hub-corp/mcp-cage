@@ -1,4 +1,4 @@
-mcp (0.1.0-1) unstable; urgency=medium
+smcp (0.1.0-1) unstable; urgency=medium
 
   * Initial PPA release.
   * CLI launcher for certified MCP servers.

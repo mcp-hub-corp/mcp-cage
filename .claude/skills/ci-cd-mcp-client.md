@@ -586,7 +586,7 @@ version: 2
 
 builds:
   - main: ./cmd/smcp
-    binary: mcp
+    binary: smcp
     ldflags: -X github.com/security-mcp/mcp-client/internal/cli.Version={{.Version}}
     goos:
       - linux
@@ -638,7 +638,7 @@ goreleaser release --clean
 .PHONY: build test lint fmt clean install help
 
 # Binary name
-BINARY=mcp
+BINARY=smcp
 
 # Build variables
 VERSION ?= dev

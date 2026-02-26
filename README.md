@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">mcp</h1>
+  <h1 align="center">smcp</h1>
   <p align="center">
     <strong>Run MCP servers without blindly trusting them.</strong>
   </p>
@@ -26,9 +26,9 @@ npx @someone/mcp-tool     # Can it read your SSH keys? Yes.
 
 No verification. No limits. No sandboxing. No audit trail. For production environments connected to internal databases and APIs, this is an unacceptable risk.
 
-## What `mcp` does
+## What `smcp` does
 
-`mcp` is a drop-in replacement for `uvx`/`npx` that adds the security layer they don't have:
+`smcp` is a drop-in replacement for `uvx`/`npx` that adds the security layer they don't have:
 
 1. **Verifies** every package against its SHA-256 digest before execution
 2. **Sandboxes** processes with CPU, memory, network, and filesystem limits
@@ -37,9 +37,9 @@ No verification. No limits. No sandboxing. No audit trail. For production enviro
 
 Packages are analyzed upstream by [MCP Hub Platform](https://mcp-hub.info) for **14 classes of security vulnerabilities** and assigned a certification level (0-3) before they ever reach your machine.
 
-## `uvx`/`npx` vs `mcp`
+## `uvx`/`npx` vs `smcp`
 
-| | `uvx` / `npx` | `mcp` |
+| | `uvx` / `npx` | `smcp` |
 |---|---|---|
 | Integrity verification | None | SHA-256 on every artifact |
 | Security analysis | None | 14 vulnerability classes, cert levels 0-3 |
@@ -56,9 +56,9 @@ Packages are analyzed upstream by [MCP Hub Platform](https://mcp-hub.info) for *
 ### Ubuntu / Debian (apt)
 
 ```bash
-sudo add-apt-repository ppa:mcphub/mcp
+sudo add-apt-repository ppa:mcphub/smcp
 sudo apt update
-sudo apt install mcp
+sudo apt install smcp
 ```
 
 Supports Ubuntu Noble (24.04 LTS) and Jammy (22.04 LTS).
@@ -66,7 +66,7 @@ Supports Ubuntu Noble (24.04 LTS) and Jammy (22.04 LTS).
 ### Homebrew (macOS)
 
 ```bash
-brew install mcp-hub-corp/tap/mcp
+brew install mcp-hub-corp/tap/smcp
 ```
 
 ### Binary
@@ -75,33 +75,33 @@ Download from [Releases](https://github.com/mcp-hub-corp/mcp-client/releases/lat
 
 ```bash
 # macOS (Apple Silicon)
-curl -sSL -o mcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/mcp_*_darwin_arm64.tar.gz
-tar xzf mcp_*_darwin_arm64.tar.gz && sudo mv mcp /usr/local/bin/
+curl -sSL -o smcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/smcp_*_darwin_arm64.tar.gz
+tar xzf smcp_*_darwin_arm64.tar.gz && sudo mv smcp /usr/local/bin/
 
 # macOS (Intel)
-curl -sSL -o mcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/mcp_*_darwin_amd64.tar.gz
-tar xzf mcp_*_darwin_amd64.tar.gz && sudo mv mcp /usr/local/bin/
+curl -sSL -o smcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/smcp_*_darwin_amd64.tar.gz
+tar xzf smcp_*_darwin_amd64.tar.gz && sudo mv smcp /usr/local/bin/
 
 # Linux (amd64)
-curl -sSL -o mcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/mcp_*_linux_amd64.tar.gz
-tar xzf mcp_*_linux_amd64.tar.gz && sudo mv mcp /usr/local/bin/
+curl -sSL -o smcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/smcp_*_linux_amd64.tar.gz
+tar xzf smcp_*_linux_amd64.tar.gz && sudo mv smcp /usr/local/bin/
 
 # Linux (arm64)
-curl -sSL -o mcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/mcp_*_linux_arm64.tar.gz
-tar xzf mcp_*_linux_arm64.tar.gz && sudo mv mcp /usr/local/bin/
+curl -sSL -o smcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/smcp_*_linux_arm64.tar.gz
+tar xzf smcp_*_linux_arm64.tar.gz && sudo mv smcp /usr/local/bin/
 ```
 
 ### From source
 
 ```bash
-go install github.com/mcp-hub-corp/mcp-client/cmd/mcp@latest
+go install github.com/mcp-hub-corp/mcp-client/cmd/smcp@latest
 ```
 
 ### Verify
 
 ```bash
-mcp --version
-mcp doctor     # shows which security features your system supports
+smcp --version
+smcp doctor     # shows which security features your system supports
 ```
 
 ---
@@ -110,29 +110,29 @@ mcp doctor     # shows which security features your system supports
 
 ```bash
 # Run a certified MCP server
-mcp run acme/hello-world@1.2.3
+smcp run acme/hello-world@1.2.3
 
 # Run latest version
-mcp run acme/tool@latest
+smcp run acme/tool@latest
 
 # Run by exact digest (immutable)
-mcp run acme/tool@sha256:a1b2c3...
+smcp run acme/tool@sha256:a1b2c3...
 
 # Pre-download for CI/CD
-mcp pull acme/tool@1.2.3
+smcp pull acme/tool@1.2.3
 
 # Inspect before running
-mcp info acme/tool@1.2.3
+smcp info acme/tool@1.2.3
 
 # Manage cache
-mcp cache ls
-mcp cache rm --all
+smcp cache ls
+smcp cache rm --all
 ```
 
 ### Authentication
 
 ```bash
-mcp login --token YOUR_TOKEN
+smcp login --token YOUR_TOKEN
 # or
 export MCP_REGISTRY_TOKEN=YOUR_TOKEN
 ```
@@ -141,7 +141,7 @@ export MCP_REGISTRY_TOKEN=YOUR_TOKEN
 
 ## Configuration
 
-Create `~/.mcp/config.yaml`:
+Create `~/.smcp/config.yaml`:
 
 ```yaml
 registry_url: "https://registry.mcp-hub.info"
@@ -151,7 +151,7 @@ max_cpu: 1000              # millicores (1000 = 1 core)
 log_level: "info"
 
 audit_enabled: true
-audit_log_file: "~/.mcp/audit.log"
+audit_log_file: "~/.smcp/audit.log"
 
 policy:
   min_cert_level: 1        # reject uncertified packages (0-3)
@@ -175,7 +175,7 @@ CLI flags override config. Environment variables use `MCP_` prefix (`MCP_REGISTR
 | Audit logging | full | full | full |
 | **Production ready** | **Yes** | No | No |
 
-> For production with untrusted MCP servers, use Linux or Docker. Run `mcp doctor` to check your system.
+> For production with untrusted MCP servers, use Linux or Docker. Run `smcp doctor` to check your system.
 
 ---
 

@@ -1,6 +1,6 @@
 # MCP Push Command
 
-The `mcp push` command allows you to publish MCP packages to the hub for certification and distribution.
+The `smcp push` command allows you to publish MCP packages to the hub for certification and distribution.
 
 ## Overview
 
@@ -15,26 +15,26 @@ The push command performs the following steps:
 ## Usage
 
 ```bash
-mcp push <org>/<name>@<version> [flags]
+smcp push <org>/<name>@<version> [flags]
 ```
 
 ### Examples
 
 ```bash
 # Publish from current directory
-mcp push acme/hello-world@1.0.0
+smcp push acme/hello-world@1.0.0
 
 # Publish from a specific directory
-mcp push acme/hello-world@1.0.0 --source ./my-mcp
+smcp push acme/hello-world@1.0.0 --source ./my-mcp
 
 # Dry run (validate and package without uploading)
-mcp push acme/hello-world@1.0.0 --dry-run
+smcp push acme/hello-world@1.0.0 --dry-run
 
 # Verbose output
-mcp push acme/hello-world@1.0.0 --verbose
+smcp push acme/hello-world@1.0.0 --verbose
 
 # Custom hub URL
-mcp push acme/hello-world@1.0.0 --hub-url https://hub.example.com
+smcp push acme/hello-world@1.0.0 --hub-url https://hub.example.com
 ```
 
 ## Flags
@@ -71,20 +71,20 @@ The push command requires authentication with the hub. You can provide credentia
 
 ```bash
 export MCP_HUB_TOKEN="your-token-here"
-mcp push acme/hello-world@1.0.0
+smcp push acme/hello-world@1.0.0
 ```
 
 ### 2. Command Flag
 
 ```bash
-mcp push acme/hello-world@1.0.0 --token your-token-here
+smcp push acme/hello-world@1.0.0 --token your-token-here
 ```
 
 ### 3. Stored Credentials (Future)
 
 ```bash
-mcp login
-mcp push acme/hello-world@1.0.0
+smcp login
+smcp push acme/hello-world@1.0.0
 ```
 
 ## Source Directory Structure
@@ -234,7 +234,7 @@ You can check the status at: https://hub.example.com/versions/version-xyz789
 Use `--dry-run` to validate and package without uploading:
 
 ```bash
-mcp push acme/hello-world@1.0.0 --dry-run
+smcp push acme/hello-world@1.0.0 --dry-run
 ```
 
 Output:
@@ -304,7 +304,7 @@ The push command respects the following configuration sources (in order of prece
 
 1. Command-line flags
 2. Environment variables
-3. Config file (`~/.mcp/config.yaml`)
+3. Config file (`~/.smcp/config.yaml`)
 4. Defaults
 
 ### Environment Variables
@@ -315,7 +315,7 @@ The push command respects the following configuration sources (in order of prece
 ### Config File
 
 ```yaml
-# ~/.mcp/config.yaml
+# ~/.smcp/config.yaml
 hub_url: https://hub.example.com
 ```
 
@@ -353,8 +353,8 @@ You can monitor progress in the hub dashboard.
 
 ### Testing
 
-- Test locally before pushing: `mcp run ./path/to/source`
-- Use dry run to validate: `mcp push --dry-run`
+- Test locally before pushing: `smcp run ./path/to/source`
+- Use dry run to validate: `smcp push --dry-run`
 - Verify manifest is correct
 
 ## Troubleshooting
@@ -385,10 +385,10 @@ If uploads timeout:
 
 ## Related Commands
 
-- `mcp run` - Execute an MCP locally
-- `mcp pull` - Download an MCP from registry
-- `mcp info` - View MCP information
-- `mcp login` - Authenticate with hub (future)
+- `smcp run` - Execute an MCP locally
+- `smcp pull` - Download an MCP from registry
+- `smcp info` - View MCP information
+- `smcp login` - Authenticate with hub (future)
 
 ## See Also
 
