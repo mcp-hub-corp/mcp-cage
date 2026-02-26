@@ -26,7 +26,7 @@ mcp-client is a secure launcher/executor for MCP (Model Context Protocol) server
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│  User: mcp run org/name@version                                │
+│  User: smcp run org/name@version                                │
 │                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │ CLI (cobra)                                              │  │
@@ -98,9 +98,9 @@ Identifies a package version immutably:
 
 Example:
 ```bash
-mcp run acme/hello-world@1.2.3
-mcp run acme/hello-world@sha:abc123
-mcp run acme/hello-world@digest:sha256:abc123...
+smcp run acme/hello-world@1.2.3
+smcp run acme/hello-world@sha:abc123
+smcp run acme/hello-world@digest:sha256:abc123...
 ```
 
 ### Manifest
@@ -211,7 +211,7 @@ How the MCP server communicates:
 Local content-addressable storage:
 
 ```
-~/.mcp/cache/
+~/.smcp/cache/
 ├── manifests/
 │   └── sha256:abc123.../manifest.json
 └── bundles/
@@ -247,7 +247,7 @@ Response:
 ## Execution Workflow
 
 ```
-1. User runs: mcp run acme/hello-world@1.2.3
+1. User runs: smcp run acme/hello-world@1.2.3
 
 2. Resolve
    - Query registry: POST /v1/packages/acme/hello-world/resolve
@@ -378,7 +378,7 @@ mcp-client implements **process-level isolation** (not VM-level):
 git clone https://github.com/security-mcp/mcp-client
 cd mcp-client
 make build
-./mcp --help
+./smcp --help
 
 # Or install to $GOPATH/bin
 make install
@@ -388,27 +388,27 @@ make install
 
 ```bash
 # Run with version
-mcp run acme/hello-world@1.2.3
+smcp run acme/hello-world@1.2.3
 
 # Check system capabilities
-mcp doctor
+smcp doctor
 
 # Pre-download package
-mcp pull acme/tool@1.0.0
+smcp pull acme/tool@1.0.0
 
 # Manage cache
-mcp cache ls
-mcp cache rm sha256:abc123...
+smcp cache ls
+smcp cache rm sha256:abc123...
 ```
 
 ### Configure Registry
 
 ```bash
 # Login to private registry
-mcp login --token my-secret-token
+smcp login --token my-secret-token
 
-# Or create ~/.mcp/config.yaml
-cat > ~/.mcp/config.yaml <<EOF
+# Or create ~/.smcp/config.yaml
+cat > ~/.smcp/config.yaml <<EOF
 registry:
   url: https://registry.example.com
   timeout: 30s
@@ -452,7 +452,7 @@ See `docs/SECURITY.md` for detailed analysis.
 
 ## Configuration
 
-Default config location: `~/.mcp/config.yaml`
+Default config location: `~/.smcp/config.yaml`
 
 See `docs/config.example.yaml` for all options.
 
@@ -488,48 +488,48 @@ See `docs/REGISTRY-CONTRACT.md` for:
 
 ## Command Reference
 
-### `mcp run <ref>`
+### `smcp run <ref>`
 Execute an MCP server
 
 ```bash
-mcp run acme/tool@1.2.3 --timeout 5m --env LOG_LEVEL=debug
+smcp run acme/tool@1.2.3 --timeout 5m --env LOG_LEVEL=debug
 ```
 
-### `mcp pull <ref>`
+### `smcp pull <ref>`
 Pre-download package without executing
 
 ```bash
-mcp pull acme/tool@1.2.3
+smcp pull acme/tool@1.2.3
 ```
 
-### `mcp info <ref>`
+### `smcp info <ref>`
 Display package information
 
 ```bash
-mcp info acme/tool@1.2.3 --json
+smcp info acme/tool@1.2.3 --json
 ```
 
-### `mcp login`
+### `smcp login`
 Authenticate with registry
 
 ```bash
-mcp login --token secret123
+smcp login --token secret123
 ```
 
-### `mcp cache ls/rm`
+### `smcp cache ls/rm`
 Manage local cache
 
 ```bash
-mcp cache ls
-mcp cache rm sha256:abc123...
-mcp cache rm --all
+smcp cache ls
+smcp cache rm sha256:abc123...
+smcp cache rm --all
 ```
 
-### `mcp doctor`
+### `smcp doctor`
 Diagnose system capabilities
 
 ```bash
-mcp doctor
+smcp doctor
 ```
 
 ## Building and Testing

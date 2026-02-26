@@ -11,7 +11,7 @@ import (
 func TestRootCommand(t *testing.T) {
 	// Test that root command exists and has expected properties
 	assert.NotNil(t, rootCmd)
-	assert.Equal(t, "mcp", rootCmd.Use)
+	assert.Equal(t, "smcp", rootCmd.Use)
 	assert.Contains(t, rootCmd.Short, "MCP Client")
 }
 

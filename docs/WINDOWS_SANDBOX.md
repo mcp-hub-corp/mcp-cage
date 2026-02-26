@@ -201,11 +201,11 @@ Only **two** things function correctly on Windows:
 To verify the NO-OP bug:
 
 ```powershell
-# 1. Run mcp doctor — it will (incorrectly) report Job Object limits as available
-mcp doctor
+# 1. Run smcp doctor — it will (incorrectly) report Job Object limits as available
+smcp doctor
 
 # 2. Run an MCP server with strict limits
-mcp run acme/test@1.0.0 --max-memory 64M --max-cpu 100
+smcp run acme/test@1.0.0 --max-memory 64M --max-cpu 100
 
 # 3. Check the process — it will have no Job Object limits applied
 Get-Process -Name "mcp-server" | Select-Object WorkingSet64, CPU

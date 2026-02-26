@@ -50,15 +50,15 @@ All 6 phases completed successfully with production-ready code, comprehensive do
 
 ### CLI Commands (9 total)
 
-- `mcp run <ref>` - Execute MCP servers (STDIO)
-- `mcp pull <ref>` - Pre-download packages
-- `mcp info <ref>` - Display package information
-- `mcp login` - Authenticate with registry
-- `mcp logout` - Remove credentials
-- `mcp cache ls` - List cached artifacts
-- `mcp cache rm` - Remove cached artifacts
-- `mcp cache gc` - Garbage collection
-- `mcp doctor` - System diagnostics
+- `smcp run <ref>` - Execute MCP servers (STDIO)
+- `smcp pull <ref>` - Pre-download packages
+- `smcp info <ref>` - Display package information
+- `smcp login` - Authenticate with registry
+- `smcp logout` - Remove credentials
+- `smcp cache ls` - List cached artifacts
+- `smcp cache rm` - Remove cached artifacts
+- `smcp cache gc` - Garbage collection
+- `smcp doctor` - System diagnostics
 
 ### Core Modules (8 modules)
 
@@ -126,9 +126,9 @@ All 6 phases completed successfully with production-ready code, comprehensive do
 **Default Registry**: https://registry.mcp-hub.info
 
 **Default Paths**:
-- Config: `~/.mcp/config.yaml`
-- Cache: `~/.mcp/cache/`
-- Audit: `~/.mcp/audit.log`
+- Config: `~/.smcp/config.yaml`
+- Cache: `~/.smcp/cache/`
+- Audit: `~/.smcp/audit.log`
 
 **Resource Defaults**:
 - CPU: 1000 millicores (1 core)

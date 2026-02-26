@@ -1,9 +1,9 @@
 project_name: mcp-client
 
 builds:
-  - id: mcp
-    main: ./cmd/mcp
-    binary: mcp
+  - id: smcp
+    main: ./cmd/smcp
+    binary: smcp
     env:
       - CGO_ENABLED=0
     ldflags:
@@ -23,8 +23,8 @@ builds:
         goarch: arm64
 
 archives:
-  - id: mcp
-    name_template: "mcp_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  - id: smcp
+    name_template: "smcp_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format: tar.gz
     format_overrides:
       - goos: windows
@@ -65,12 +65,12 @@ release:
   prerelease: auto
   mode: replace
   header: |
-    ## mcp {{ .Tag }}
+    ## smcp {{ .Tag }}
 
     ### Installation
 
     ```bash
-    brew install mcp-hub-corp/tap/mcp
+    brew install mcp-hub-corp/tap/smcp
     ```
 
     Or download the appropriate binary for your platform below.
@@ -78,7 +78,7 @@ release:
     **Full Changelog**: https://github.com/mcp-hub-corp/mcp-client/compare/{{ .PreviousTag }}...{{ .Tag }}
 
 brews:
-  - name: mcp
+  - name: smcp
     repository:
       owner: mcp-hub-corp
       name: homebrew-tap
@@ -88,6 +88,6 @@ brews:
     description: "Run MCP servers without blindly trusting them"
     license: "MIT"
     install: |
-      bin.install "mcp"
+      bin.install "smcp"
     test: |
-      system "#{bin}/mcp", "--version"
+      system "#{bin}/smcp", "--version"

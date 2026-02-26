@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully implemented the `mcp push` command that allows users to publish MCP packages to the hub for certification and distribution.
+Successfully implemented the `smcp push` command that allows users to publish MCP packages to the hub for certification and distribution.
 
 ## Implemented Components
 
@@ -188,7 +188,7 @@ To publish, run without --dry-run flag
 - `MCP_HUB_URL` - Hub URL
 - `MCP_HUB_TOKEN` - Authentication token
 
-**Config File (`~/.mcp/config.yaml`):**
+**Config File (`~/.smcp/config.yaml`):**
 ```yaml
 hub_url: https://hub.example.com
 ```
@@ -202,7 +202,7 @@ hub_url: https://hub.example.com
 **Push Flow:**
 ```
 Developer
-    ↓ mcp push org/name@version
+    ↓ smcp push org/name@version
 MCP-CLIENT (CLI)
     ↓ POST /v1/uploads/init
 MCP-HUB (Platform)
@@ -215,14 +215,14 @@ MCP-HUB (Platform)
     ↓ Job: PUBLISH_TO_REGISTRY (future)
 MCP-REGISTRY
     → Artefacto disponible
-    ← mcp run org/name@version
+    ← smcp run org/name@version
 ```
 
 ## Future Enhancements
 
 1. **Authentication Flow**
-   - Implement `mcp login` command
-   - Store credentials securely in `~/.mcp/auth.json`
+   - Implement `smcp login` command
+   - Store credentials securely in `~/.smcp/auth.json`
    - Support token refresh
 
 2. **Status Tracking**
@@ -282,7 +282,7 @@ Fully compatible with existing codebase:
 
 1. **Authentication**
    - Currently requires manual token management
-   - No `mcp login` command yet (future enhancement)
+   - No `smcp login` command yet (future enhancement)
 
 2. **Large Files**
    - No chunked upload for very large bundles
@@ -332,12 +332,12 @@ Fully compatible with existing codebase:
 
 ## Conclusion
 
-The `mcp push` command is fully implemented and ready for use. It provides a smooth user experience for publishing MCPs to the hub, with comprehensive error handling, progress tracking, and validation.
+The `smcp push` command is fully implemented and ready for use. It provides a smooth user experience for publishing MCPs to the hub, with comprehensive error handling, progress tracking, and validation.
 
 **Status: ✅ COMPLETE**
 
 All DoD criteria met:
-- ✅ Comando `mcp push` funciona
+- ✅ Comando `smcp push` funciona
 - ✅ Progress bars implementados
 - ✅ Error handling robusto
 - ✅ Help y ejemplos

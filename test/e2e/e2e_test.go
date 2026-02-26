@@ -27,18 +27,18 @@ const (
 )
 
 var (
-	mcpBinary = "../../mcp"
+	mcpBinary = "../../smcp"
 )
 
 // TestMain ensures registry is available before running tests
 func TestMain(m *testing.M) {
 	// Check if mcp binary exists
 	if _, err := os.Stat(mcpBinary); os.IsNotExist(err) {
-		fmt.Println("Building mcp binary...")
+		fmt.Println("Building smcp binary...")
 		cmd := exec.Command("make", "build")
 		cmd.Dir = "../.."
 		if err := cmd.Run(); err != nil {
-			fmt.Printf("Failed to build mcp: %v\n", err)
+			fmt.Printf("Failed to build smcp: %v\n", err)
 			os.Exit(1)
 		}
 	}
@@ -181,7 +181,7 @@ func TestE2E_Version(t *testing.T) {
 	stdout, _, exitCode := runMCP(t, "--version")
 
 	assert.Equal(t, 0, exitCode)
-	assert.Contains(t, stdout, "mcp version")
+	assert.Contains(t, stdout, "smcp version")
 }
 
 func TestE2E_Help(t *testing.T) {

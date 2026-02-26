@@ -14,7 +14,7 @@ This directory contains E2E tests that validate the complete mcp-client workflow
    ./bin/mcp-registry -config /tmp/mcp-e2e-config.yaml
    ```
 
-2. **mcp binary built**:
+2. **smcp binary built**:
    ```bash
    make build
    ```

@@ -15,7 +15,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	// Reset Viper global state so config file on disk does not interfere
 	viper.Reset()
 
-	// Use a temp dir as HOME so no real ~/.mcp/config.yaml is read
+	// Use a temp dir as HOME so no real ~/.smcp/config.yaml is read
 	tempHome := t.TempDir()
 	origHome := os.Getenv("HOME")
 	os.Setenv("HOME", tempHome)
@@ -31,7 +31,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	require.NotNil(t, cfg)
 
 	assert.Equal(t, "https://registry.mcp-hub.info", cfg.RegistryURL)
-	assert.Contains(t, cfg.CacheDir, filepath.FromSlash(".mcp/cache"))
+	assert.Contains(t, cfg.CacheDir, filepath.FromSlash(".smcp/cache"))
 	assert.Equal(t, 5*time.Minute, cfg.Timeout)
 	assert.Equal(t, 1000, cfg.MaxCPU)
 	assert.Equal(t, "512M", cfg.MaxMemory)
@@ -39,7 +39,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	assert.Equal(t, 1024, cfg.MaxFDs)
 	assert.Equal(t, "info", cfg.LogLevel)
 	assert.True(t, cfg.AuditEnabled)
-	assert.Contains(t, cfg.AuditLogFile, filepath.FromSlash(".mcp/audit.log"))
+	assert.Contains(t, cfg.AuditLogFile, filepath.FromSlash(".smcp/audit.log"))
 }
 
 func TestLoadConfig_EnvVarOverride(t *testing.T) {
@@ -67,8 +67,8 @@ func TestExpandPath(t *testing.T) {
 	}{
 		{
 			name:     "expand tilde",
-			input:    "~/.mcp/config",
-			contains: filepath.FromSlash(".mcp/config"),
+			input:    "~/.smcp/config",
+			contains: filepath.FromSlash(".smcp/config"),
 		},
 		{
 			name:     "absolute path unchanged",

@@ -47,7 +47,7 @@ type PolicyConfig struct {
 func LoadConfig() (*Config, error) {
 	// Set defaults
 	viper.SetDefault("registry_url", "https://registry.mcp-hub.info")
-	viper.SetDefault("cache_dir", filepath.Join(getHomeDir(), ".mcp", "cache"))
+	viper.SetDefault("cache_dir", filepath.Join(getHomeDir(), ".smcp", "cache"))
 	viper.SetDefault("timeout", 5*time.Minute)
 	viper.SetDefault("max_cpu", 1000) // 1 core
 	viper.SetDefault("max_memory", "512M")
@@ -55,7 +55,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("max_fds", 1024)
 	viper.SetDefault("log_level", "info")
 	viper.SetDefault("audit_enabled", true)
-	viper.SetDefault("audit_log_file", filepath.Join(getHomeDir(), ".mcp", "audit.log"))
+	viper.SetDefault("audit_log_file", filepath.Join(getHomeDir(), ".smcp", "audit.log"))
 
 	// CRITICAL: Mandatory default limits (ALWAYS applied, cannot be disabled)
 	// These defaults ensure execution without limits is NEVER possible
@@ -72,7 +72,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("policy.score_mode", "disabled")      // No enforcement by default
 
 	// Set config file location
-	configDir := filepath.Join(getHomeDir(), ".mcp")
+	configDir := filepath.Join(getHomeDir(), ".smcp")
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(configDir)

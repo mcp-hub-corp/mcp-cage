@@ -1,8 +1,8 @@
 # Binaries
-/mcp
-/mcp-linux
-/mcp-windows.exe
-/mcp.exe
+/smcp
+/smcp-linux
+/smcp-windows.exe
+/smcp.exe
 /bin/
 
 # Test artifacts

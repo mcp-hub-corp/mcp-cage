@@ -20,12 +20,12 @@ override_dh_auto_clean:
 override_dh_auto_configure:
 
 override_dh_auto_build:
-	go build -ldflags "$(LDFLAGS)" -trimpath -o $(CURDIR)/mcp ./cmd/mcp/
+	go build -ldflags "$(LDFLAGS)" -trimpath -o $(CURDIR)/smcp ./cmd/smcp/
 
 override_dh_auto_test:
 
 override_dh_auto_install:
-	install -D -m 0755 $(CURDIR)/mcp $(CURDIR)/debian/mcp/usr/bin/mcp
+	install -D -m 0755 $(CURDIR)/smcp $(CURDIR)/debian/smcp/usr/bin/smcp
 
 override_dh_dwz:
 

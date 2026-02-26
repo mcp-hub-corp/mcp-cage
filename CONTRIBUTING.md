@@ -17,7 +17,7 @@ Before creating bug reports, please check existing issues to avoid duplicates. W
 - **Expected behavior** vs **actual behavior**
 - **Environment details**: OS, architecture, Go version
 - **Relevant logs** (use `--verbose` flag)
-- **Output of `mcp doctor`** if applicable
+- **Output of `smcp doctor`** if applicable
 
 ### Suggesting Enhancements
 

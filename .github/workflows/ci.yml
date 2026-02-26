@@ -107,8 +107,8 @@ jobs:
         go-version: '1.24'
 
     - name: Build
-      run: go build -v ./cmd/mcp
+      run: go build -v ./cmd/smcp
 
     - name: Verify binary
-      run: ./mcp --version || mcp.exe --version
+      run: ./smcp --version || smcp.exe --version
       shell: bash

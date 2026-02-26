@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+# Install uv (Python package manager)
+RUN pip install uv
+
+# Create mcp config directory
+RUN mkdir -p /root/.smcp
+
+# Copy the mcp binary
+COPY smcp-linux /usr/local/bin/smcp
+RUN chmod +x /usr/local/bin/smcp
+
+# Write config
+RUN echo 'registry_url: https://registry.mcp-hub.info' > /root/.smcp/config.yaml
+
+WORKDIR /app

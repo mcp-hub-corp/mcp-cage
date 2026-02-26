@@ -70,7 +70,7 @@ mcp-client is a CLI tool that implements a secure launcher for MCP servers. It f
 - `config_test.go`: Configuration tests
 
 **Features**:
-- YAML file loading from `~/.mcp/config.yaml`
+- YAML file loading from `~/.smcp/config.yaml`
 - Environment variable overrides (MCP_*)
 - Command-line flag overrides
 - Sensible defaults
@@ -122,7 +122,7 @@ mcp-client is a CLI tool that implements a secure launcher for MCP servers. It f
 - Content-addressable by digest
 - Separate directories for manifests and bundles:
   ```
-  ~/.mcp/cache/
+  ~/.smcp/cache/
     manifests/
       sha256:abc123.../
     bundles/
@@ -318,7 +318,7 @@ sandbox.go (interface)
 
 ## Data Flow
 
-### mcp run org/name@1.0.0
+### smcp run org/name@1.0.0
 
 ```
 1. Parse Reference
@@ -391,9 +391,9 @@ sandbox.go (interface)
 ### Concurrent Operations
 
 Safe concurrent operations:
-- Multiple `mcp run` commands (different packages)
-- Multiple `mcp pull` commands (different packages)
-- `mcp cache ls` while downloading
+- Multiple `smcp run` commands (different packages)
+- Multiple `smcp pull` commands (different packages)
+- `smcp cache ls` while downloading
 
 Serialized operations:
 - Cache writes for same digest
@@ -591,11 +591,11 @@ Serialized operations:
 
 ```bash
 # Direct execution
-./mcp run org/name@1.0.0
+./smcp run org/name@1.0.0
 
 # System-wide installation
-sudo cp mcp /usr/local/bin/
-mcp run org/name@1.0.0
+sudo cp smcp /usr/local/bin/
+smcp run org/name@1.0.0
 ```
 
 ### Docker Container
@@ -614,9 +614,9 @@ docker run --rm mcp-client run org/name@1.0.0
 # GitHub Actions
 - name: Run MCP tool
   run: |
-    curl -sSL https://github.com/security-mcp/mcp-client/releases/download/v1.0.0/mcp-linux-amd64 -o mcp
-    chmod +x mcp
-    ./mcp run org/tool@1.0.0
+    curl -sSL https://github.com/security-mcp/mcp-client/releases/download/v1.0.0/smcp-linux-amd64 -o smcp
+    chmod +x smcp
+    ./smcp run org/tool@1.0.0
 ```
 
 ## Future Architecture Considerations
