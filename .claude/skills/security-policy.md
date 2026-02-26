@@ -263,7 +263,7 @@ err = sandbox.Apply(cmd, policy)
 
 ### Layer 1: Configuration Loading
 ```go
-// Load policy from ~/.mcp/config.yaml
+// Load policy from ~/.smcp/config.yaml
 configPolicy, err := loadConfigPolicy()
 
 // Validate no critical errors

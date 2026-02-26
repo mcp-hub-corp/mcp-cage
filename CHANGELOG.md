@@ -7,13 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **2026-02-26**: Fixed missed `mcp` → `smcp` references in `.claude/` agent and skill files (26 files total). Changed `~/.mcp/` → `~/.smcp/` config/cache/audit paths, CLI command references (`mcp run` → `smcp run`, `mcp doctor` → `smcp doctor`, etc.), Cobra `Use: "mcp"` → `Use: "smcp"`, build targets `cmd/mcp` → `cmd/smcp`, cgroup names, and binary references (`./mcp` → `./smcp`). Preserved MCP protocol name, `mcp-client` project name, `MCP_*` env vars, and Go import paths.
+
 ### Added
 
-- **2026-02-25**: Ubuntu PPA packaging (`ppa:mcphub/mcp`). Added `debian/` directory with full Debian source packaging (control, rules, copyright, changelog). Added `scripts/ppa-upload.sh` for building and uploading source packages to Launchpad PPA targeting Noble (24.04 LTS) and Jammy (22.04 LTS). Added `.github/workflows/ppa.yml` for automated PPA uploads on git tag push. Orig tarball is built once and shared across releases to ensure identical checksums. Users can install with `sudo add-apt-repository ppa:mcphub/mcp && sudo apt install mcp`.
+- **2026-02-25**: Ubuntu PPA packaging (`ppa:mcphub/smcp`). Added `debian/` directory with full Debian source packaging (control, rules, copyright, changelog). Added `scripts/ppa-upload.sh` for building and uploading source packages to Launchpad PPA targeting Noble (24.04 LTS) and Jammy (22.04 LTS). Added `.github/workflows/ppa.yml` for automated PPA uploads on git tag push. Orig tarball is built once and shared across releases to ensure identical checksums. Users can install with `sudo add-apt-repository ppa:mcphub/smcp && sudo apt install smcp`.
 
 ### Changed
 
-- **2026-02-24**: Switched release pipeline from manual `go build` to GoReleaser v2. Adds Homebrew tap auto-publishing to `mcp-hub-corp/homebrew-tap`. Install with `brew install mcp-hub-corp/tap/mcp`. Fixed GitHub org reference from `security-mcp` to `mcp-hub-corp` in `.goreleaser.yml`. Updated README install section with Homebrew as recommended method.
+- **2026-02-24**: Switched release pipeline from manual `go build` to GoReleaser v2. Adds Homebrew tap auto-publishing to `mcp-hub-corp/homebrew-tap`. Install with `brew install mcp-hub-corp/tap/smcp`. Fixed GitHub org reference from `security-mcp` to `mcp-hub-corp` in `.goreleaser.yml`. Updated README install section with Homebrew as recommended method.
 
 ### Changed (previous)
 
@@ -23,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **2026-02-24**: SIGINT/SIGTERM signal handling in `mcp run`. The executor runs in a goroutine; signals cancel the context and wait for clean shutdown, logging the event to the audit trail.
+- **2026-02-24**: SIGINT/SIGTERM signal handling in `smcp run`. The executor runs in a goroutine; signals cancel the context and wait for clean shutdown, logging the event to the audit trail.
 - **2026-02-23**: Pretty CLI log handler (`PrettyHandler`) replacing `slog.TextHandler`. Terminal: ANSI colors + icons (`⚠` warn, `✗` error), no timestamps. Non-terminal: plain `[LEVEL] message` format.
 - **2026-02-23**: Runtime/command consistency warning in `parseHubManifest()` — warns when `runtime.type` doesn't match the entrypoint command (e.g., python runtime with node command).
 

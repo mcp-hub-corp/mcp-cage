@@ -42,7 +42,7 @@ Crear y mantener documentación completa del proyecto: guías de usuario, arquit
    - Exit codes y manejo de errores
 
 6. **docs/CONFIGURATION.md**
-   - Formato de `~/.mcp/config.yaml`
+   - Formato de `~/.smcp/config.yaml`
    - Variables de entorno
    - Orden de precedencia (flags > env > config > defaults)
    - Ejemplos de configuraciones comunes
@@ -70,16 +70,16 @@ Crear y mantener documentación completa del proyecto: guías de usuario, arquit
 
    ```bash
    # Instalar
-   go install github.com/your-org/mcp-client/cmd/mcp-launcher@latest
+   go install github.com/your-org/mcp-client/cmd/smcp@latest
 
    # Login (opcional)
-   mcp login --token YOUR_TOKEN
+   smcp login --token YOUR_TOKEN
 
    # Ejecutar servidor MCP
-   mcp run acme/hello-world@1.2.3
+   smcp run acme/hello-world@1.2.3
 
    # Ver capacidades del sistema
-   mcp doctor
+   smcp doctor
    ```
 
    ## Features
@@ -125,12 +125,12 @@ Crear y mantener documentación completa del proyecto: guías de usuario, arquit
    Hash SHA-256 inmutable que identifica un manifest o bundle.
 
    ### Cache
-   Almacenamiento local en `~/.mcp/cache/` organizado por digest (content-addressable).
+   Almacenamiento local en `~/.smcp/cache/` organizado por digest (content-addressable).
 
    ## Flujo de ejecución
 
    ```
-   1. mcp run acme/hello@1.2.3
+   1. smcp run acme/hello@1.2.3
    2. Resolver referencia en registry (POST /v1/packages/acme/hello/resolve)
    3. Descargar manifest y bundle (validar digest)
    4. Guardar en caché
@@ -208,7 +208,7 @@ Crear y mantener documentación completa del proyecto: guías de usuario, arquit
 
    - **Producción**: usar Linux para máxima seguridad
    - **Desarrollo local**: macOS/Windows aceptable con limitaciones documentadas
-   - **Validación**: siempre ejecutar `mcp doctor` antes de deployment
+   - **Validación**: siempre ejecutar `smcp doctor` antes de deployment
    ```
 
 4. **docs/REGISTRY.md**
@@ -249,10 +249,10 @@ Crear y mantener documentación completa del proyecto: guías de usuario, arquit
 
    Login OSS:
    ```bash
-   mcp login --token XXX
+   smcp login --token XXX
    ```
 
-   Token guardado en `~/.mcp/auth.json`.
+   Token guardado en `~/.smcp/auth.json`.
 
    ## Validación de digest
 
@@ -263,7 +263,7 @@ Crear y mantener documentación completa del proyecto: guías de usuario, arquit
 
    ## Caché
 
-   Artefactos cacheados en `~/.mcp/cache/{manifests,bundles}/sha256:abc/`.
+   Artefactos cacheados en `~/.smcp/cache/{manifests,bundles}/sha256:abc/`.
    ```
 
 5. **docs/DEVELOPMENT.md**
@@ -422,18 +422,18 @@ Incluir ejemplos end-to-end en docs:
 
 ```bash
 # Ejemplo 1: Ejecución básica
-mcp run acme/hello-world@1.2.3
+smcp run acme/hello-world@1.2.3
 
 # Ejemplo 2: Con timeout y secrets
-mcp run acme/db-tool@2.0.0 \
+smcp run acme/db-tool@2.0.0 \
   --timeout 2m \
   --secret DB_PASSWORD=xxx \
   --env-file .env
 
 # Ejemplo 3: Pre-download y cache
-mcp pull acme/heavy-tool@3.0.0
-mcp cache ls
-mcp run acme/heavy-tool@3.0.0  # usa caché
+smcp pull acme/heavy-tool@3.0.0
+smcp cache ls
+smcp run acme/heavy-tool@3.0.0  # usa caché
 ```
 
 ### Mantener docs actualizados

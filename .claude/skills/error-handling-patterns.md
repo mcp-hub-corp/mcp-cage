@@ -509,7 +509,7 @@ func parseConfig(path string) (*Config, error) {
 		if os.IsNotExist(err) {
 			// User-friendly: specific suggestion
 			return nil, fmt.Errorf(
-				"config file not found at %s; create with: mcp init",
+				"config file not found at %s; create with: smcp init",
 				path,
 			)
 		}

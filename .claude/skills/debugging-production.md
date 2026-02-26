@@ -21,31 +21,31 @@ This skill covers debugging mcp-client in production and development environment
 
 ```bash
 # Exit code 0: Success
-mcp run acme/package@1.0.0  # Succeeded
+smcp run acme/package@1.0.0  # Succeeded
 echo $?  # Output: 0
 
 # Exit code 1: Configuration error
-mcp run invalid-ref  # Invalid reference format
+smcp run invalid-ref  # Invalid reference format
 echo $?  # Output: 1
 
 # Exit code 2: Network/Registry error
-mcp run acme/nonexistent@1.0.0  # Package not found in registry
+smcp run acme/nonexistent@1.0.0  # Package not found in registry
 echo $?  # Output: 2
 
 # Exit code 3: Validation error
-mcp run acme/package@1.0.0  # Digest mismatch after download
+smcp run acme/package@1.0.0  # Digest mismatch after download
 echo $?  # Output: 3
 
 # Exit code 4: Execution error
-mcp run acme/package@1.0.0  # MCP server process exited with error
+smcp run acme/package@1.0.0  # MCP server process exited with error
 echo $?  # Output: 4
 
 # Exit code 5: Timeout
-mcp run acme/package@1.0.0 --timeout 1s  # Process exceeded timeout
+smcp run acme/package@1.0.0 --timeout 1s  # Process exceeded timeout
 echo $?  # Output: 5
 
 # Exit code 124: Signal (SIGTERM/SIGKILL)
-mcp run acme/package@1.0.0  # Process killed by signal
+smcp run acme/package@1.0.0  # Process killed by signal
 echo $?  # Output: 124
 ```
 
@@ -68,7 +68,7 @@ curl -s https://registry.example.com/v1/packages/acme/hello-world/resolve?ref=1.
 curl -s https://registry.example.com/v1/packages/acme/hello-world/versions | jq '.versions[]'
 
 # Verify registry URL in config
-cat ~/.mcp/config.yaml | grep registry
+cat ~/.smcp/config.yaml | grep registry
 
 # Test registry connectivity
 curl -I https://registry.example.com/v1/packages
@@ -81,23 +81,23 @@ curl -I https://registry.example.com/v1/packages
 [ERROR] Digest validation failed for manifest
 [ERROR] Expected: sha256:abc123...
 [ERROR] Got:      sha256:xyz789...
-[ERROR] Action: Bundle may be corrupted, try: mcp cache rm sha256:abc123... && mcp pull acme/pkg@1.0.0
+[ERROR] Action: Bundle may be corrupted, try: smcp cache rm sha256:abc123... && mcp pull acme/pkg@1.0.0
 ```
 
 **Debugging:**
 ```bash
 # List cached artifacts
-mcp cache ls
+smcp cache ls
 
 # Show specific artifact
-mcp cache ls | grep "abc123"
+smcp cache ls | grep "abc123"
 
 # Verify digest manually
-sha256sum ~/.mcp/cache/bundles/sha256:abc123.../bundle.tar.gz
+sha256sum ~/.smcp/cache/bundles/sha256:abc123.../bundle.tar.gz
 
 # Force re-download
-mcp cache rm sha256:abc123...
-mcp pull acme/package@1.0.0 --no-cache
+smcp cache rm sha256:abc123...
+smcp pull acme/package@1.0.0 --no-cache
 ```
 
 **Root causes:**
@@ -117,16 +117,16 @@ mcp pull acme/package@1.0.0 --no-cache
 **Debugging:**
 ```bash
 # Check stored credentials
-cat ~/.mcp/auth.json | jq .
+cat ~/.smcp/auth.json | jq .
 
 # Check token expiration
-cat ~/.mcp/auth.json | jq '.registries[] | .expires_at'
+cat ~/.smcp/auth.json | jq '.registries[] | .expires_at'
 
 # Re-authenticate
-mcp login --token $(cat /path/to/token.txt)
+smcp login --token $(cat /path/to/token.txt)
 
 # Test with curl
-curl -H "Authorization: Bearer $(cat ~/.mcp/auth.json | jq -r '.registries["https://registry"].token')" \
+curl -H "Authorization: Bearer $(cat ~/.smcp/auth.json | jq -r '.registries["https://registry"].token')" \
   https://registry.example.com/v1/packages/acme/test/resolve?ref=1.0.0
 ```
 
@@ -141,7 +141,7 @@ curl -H "Authorization: Bearer $(cat ~/.mcp/auth.json | jq -r '.registries["http
 **Debugging:**
 ```bash
 # Increase timeout
-mcp run acme/package@1.0.0 --timeout 10m
+smcp run acme/package@1.0.0 --timeout 10m
 
 # Check if server is hung
 ps aux | grep mcp
@@ -163,21 +163,21 @@ strace -p <PID>  # See what process is doing
 ```bash
 # Monitor memory usage
 while true; do
-  ps aux | grep mcp-server | grep -v grep
+  ps aux | grep smcp-server | grep -v grep
   sleep 1
 done
 
 # Check resource limits applied
-cat ~/.mcp/config.yaml | grep memory
+cat ~/.smcp/config.yaml | grep memory
 
 # Increase in config
-cat >> ~/.mcp/config.yaml << EOF
+cat >> ~/.smcp/config.yaml << EOF
 executor:
   max_memory: 2G
 EOF
 
 # Run with verbose to see limits
-mcp run acme/package@1.0.0 --log-level debug 2>&1 | grep -i "limit\|memory"
+smcp run acme/package@1.0.0 --log-level debug 2>&1 | grep -i "limit\|memory"
 ```
 
 #### Subprocess Not Allowed
@@ -191,19 +191,19 @@ mcp run acme/package@1.0.0 --log-level debug 2>&1 | grep -i "limit\|memory"
 **Debugging:**
 ```bash
 # Check manifest permissions
-mcp pull acme/package@1.0.0 --no-cache
-cat ~/.mcp/cache/manifests/sha256:.../manifest.json | jq '.permissions_requested.subprocess'
+smcp pull acme/package@1.0.0 --no-cache
+cat ~/.smcp/cache/manifests/sha256:.../manifest.json | jq '.permissions_requested.subprocess'
 
 # Check if package needs subprocess
 # If true, ensure it's allowed:
-cat >> ~/.mcp/config.yaml << EOF
+cat >> ~/.smcp/config.yaml << EOF
 security:
   subprocess:
     allow: true
 EOF
 
 # Or mark specific package as trusted
-cat >> ~/.mcp/config.yaml << EOF
+cat >> ~/.smcp/config.yaml << EOF
 trusted_packages:
   - acme/package
 EOF
@@ -220,15 +220,15 @@ EOF
 **Debugging:**
 ```bash
 # Check manifest network allowlist
-mcp pull acme/package@1.0.0
-cat ~/.mcp/cache/manifests/sha256:.../manifest.json | jq '.permissions_requested.network'
+smcp pull acme/package@1.0.0
+cat ~/.smcp/cache/manifests/sha256:.../manifest.json | jq '.permissions_requested.network'
 
 # If allowlist is empty, network is default-deny (Linux)
 # Check what domains package tries to access
-mcp run acme/package@1.0.0 --log-level debug 2>&1 | grep -i "network\|connect"
+smcp run acme/package@1.0.0 --log-level debug 2>&1 | grep -i "network\|connect"
 
 # Temporarily disable network policy (dangerous!)
-cat >> ~/.mcp/config.yaml << EOF
+cat >> ~/.smcp/config.yaml << EOF
 security:
   network:
     default_deny: false
@@ -243,15 +243,15 @@ EOF
 
 ```bash
 # Enable debug level
-mcp run acme/package@1.0.0 --log-level debug
+smcp run acme/package@1.0.0 --log-level debug
 
 # Or set environment variable
 export MCP_LOG_LEVEL=debug
-mcp run acme/package@1.0.0
+smcp run acme/package@1.0.0
 
 # JSON-formatted debug logs (for parsing)
 export MCP_LOG_FORMAT=json
-mcp run acme/package@1.0.0 2>&1 | tee run.log
+smcp run acme/package@1.0.0 2>&1 | tee run.log
 ```
 
 ### 2.2 Debug Output Interpretation
@@ -286,17 +286,17 @@ mcp run acme/package@1.0.0 2>&1 | tee run.log
 
 ```bash
 # Show only errors
-mcp run acme/package@1.0.0 --log-level error
+smcp run acme/package@1.0.0 --log-level error
 
 # Show info + errors
-mcp run acme/package@1.0.0 --log-level info
+smcp run acme/package@1.0.0 --log-level info
 
 # Show specific component debug logs
-mcp run acme/package@1.0.0 --log-level debug 2>&1 | grep "registry\|cache\|sandbox"
+smcp run acme/package@1.0.0 --log-level debug 2>&1 | grep "registry\|cache\|sandbox"
 
 # Filter with jq (if using JSON logs)
 export MCP_LOG_FORMAT=json
-mcp run acme/package@1.0.0 2>&1 | jq 'select(.level=="ERROR")'
+smcp run acme/package@1.0.0 2>&1 | jq 'select(.level=="ERROR")'
 ```
 
 ---
@@ -308,7 +308,7 @@ mcp run acme/package@1.0.0 2>&1 | jq 'select(.level=="ERROR")'
 ```bash
 # Enable JSON logging
 export MCP_LOG_FORMAT=json
-mcp run acme/package@1.0.0 > run.log 2>&1
+smcp run acme/package@1.0.0 > run.log 2>&1
 
 # View as JSON
 jq . run.log
@@ -376,7 +376,7 @@ jq 'select(.duration_ms > 1000) | {timestamp, message, duration_ms}' run.log
 
 **Trace all system calls:**
 ```bash
-strace -f -e trace=open,openat,read,write,connect mcp run acme/package@1.0.0
+strace -f -e trace=open,openat,read,write,connect smcp run  acme/package@1.0.0
 ```
 
 **Output interpretation:**
@@ -394,16 +394,16 @@ close(5) = 0
 **Trace specific syscall:**
 ```bash
 # Network connections only
-strace -e network mcp run acme/package@1.0.0
+strace -e network smcp run  acme/package@1.0.0
 
 # File operations only
-strace -e openat,read,write mcp run acme/package@1.0.0
+strace -e openat,read,write smcp run  acme/package@1.0.0
 
 # Show time for each call
-strace -t -e open,read,write mcp run acme/package@1.0.0
+strace -t -e open,read,write smcp run  acme/package@1.0.0
 
 # Count syscalls
-strace -c mcp run acme/package@1.0.0
+strace -c smcp run  acme/package@1.0.0
 ```
 
 **Output format:**
@@ -420,20 +420,20 @@ strace -c mcp run acme/package@1.0.0
 
 **Trace file access:**
 ```bash
-sudo dtrace -n 'syscall:::entry /execname == "mcp"/ { @[execname] = count(); }' -c "mcp run acme/package@1.0.0"
+sudo dtrace -n 'syscall:::entry /execname == "smcp"/ { @[execname] = count(); }' -c "smcp run acme/package@1.0.0"
 ```
 
 **Trace network connections:**
 ```bash
-sudo dtrace -n 'syscall:::entry /execname == "mcp" && (arg0 == "connect" || arg0 == "send")/ { trace(execname); }' -c "mcp run acme/package@1.0.0"
+sudo dtrace -n 'syscall:::entry /execname == "smcp" && (arg0 == "connect" || arg0 == "send")/ { trace(execname); }' -c "smcp run acme/package@1.0.0"
 ```
 
 ### 4.3 Process Inspection
 
 **List open files:**
 ```bash
-# Start mcp in background
-mcp run acme/package@1.0.0 &
+# Start smcp in background
+smcp run acme/package@1.0.0 &
 MCP_PID=$!
 
 # List open files
@@ -449,7 +449,7 @@ lsof -p $MCP_PID
 **Monitor resource usage:**
 ```bash
 # Real-time monitoring
-watch -n 0.1 'ps aux | grep mcp-server'
+watch -n 0.1 'ps aux | grep smcp-server'
 
 # Or use top
 top -p $(pgrep mcp)
@@ -480,7 +480,7 @@ cat /proc/$(pgrep mcp)/limits
 curl -I https://registry.example.com/v1/packages
 
 # With authentication
-curl -H "Authorization: Bearer $(cat ~/.mcp/auth.json | jq -r '.registries["https://registry"].token')" \
+curl -H "Authorization: Bearer $(cat ~/.smcp/auth.json | jq -r '.registries["https://registry"].token')" \
   https://registry.example.com/v1/packages
 
 # Verbose output
@@ -510,7 +510,7 @@ Create `curl-format.txt`:
 sudo tcpdump -i any -n dst registry.example.com -w capture.pcap &
 
 # Run mcp
-mcp run acme/package@1.0.0
+smcp run acme/package@1.0.0
 
 # Stop capture
 sudo pkill tcpdump
@@ -545,9 +545,9 @@ dig registry.example.com
 # Check which DNS server is used
 cat /etc/resolv.conf
 
-# Test with mcp verbose
+# Test with smcp verbose
 export MCP_LOG_LEVEL=debug
-mcp run acme/package@1.0.0 2>&1 | grep -i "dns\|resolv\|hostname"
+smcp run acme/package@1.0.0 2>&1 | grep -i "dns\|resolv\|hostname"
 ```
 
 ---
@@ -558,7 +558,7 @@ mcp run acme/package@1.0.0 2>&1 | grep -i "dns\|resolv\|hostname"
 
 ```bash
 # Show all artifacts
-mcp cache ls
+smcp cache ls
 
 # Output:
 # DIGEST                                          TYPE      SIZE     LAST USED
@@ -566,10 +566,10 @@ mcp cache ls
 # sha256:def456...                                bundle    12.5 MB  1 hour ago
 
 # Get detailed info
-mcp cache ls | grep -E "^sha256:abc123"
+smcp cache ls | grep -E "^sha256:abc123"
 
 # Count artifacts
-mcp cache ls | wc -l
+smcp cache ls | wc -l
 ```
 
 ### 6.2 Verify Artifact Integrity
@@ -596,25 +596,25 @@ tar -tzf "$CACHE_PATH/bundle.tar.gz" | head -20
 
 ```bash
 # Remove single artifact
-mcp cache rm sha256:abc123...
+smcp cache rm sha256:abc123...
 
 # Remove multiple
-mcp cache rm sha256:abc123... sha256:def456...
+smcp cache rm sha256:abc123... sha256:def456...
 
 # Remove all (careful!)
-mcp cache rm --all
+smcp cache rm --all
 
 # List before removal
-mcp cache ls > old_cache.txt
-mcp cache rm --all
-mcp cache ls > new_cache.txt
+smcp cache ls > old_cache.txt
+smcp cache rm --all
+smcp cache ls > new_cache.txt
 ```
 
 ### 6.4 Cache Corruption Detection
 
 ```bash
 # Check all cached artifacts
-for manifest in ~/.mcp/cache/manifests/*/manifest.json; do
+for manifest in ~/.smcp/cache/manifests/*/manifest.json; do
   digest=$(dirname "$manifest" | xargs basename)
   sha256sum "$manifest" | awk '{print $1}' > /tmp/computed
   expected=$(echo "$digest" | sed 's/sha256://')
@@ -624,8 +624,8 @@ for manifest in ~/.mcp/cache/manifests/*/manifest.json; do
 done
 
 # If corruption found, clean and re-download
-mcp cache rm --all
-mcp pull acme/package@1.0.0 --no-cache
+smcp cache rm --all
+smcp pull acme/package@1.0.0 --no-cache
 ```
 
 ---
@@ -636,7 +636,7 @@ mcp pull acme/package@1.0.0 --no-cache
 
 ```bash
 # Run doctor command
-mcp doctor
+smcp doctor
 
 # Output:
 # [✓] OS: linux (amd64)
@@ -647,29 +647,29 @@ mcp doctor
 # [✓] Cache directory: /home/user/.mcp/cache (writable)
 
 # Check specific capability
-mcp doctor 2>&1 | grep "Cgroups"
+smcp doctor 2>&1 | grep "Cgroups"
 ```
 
 ### 7.2 Monitor Resource Limits
 
 **Linux cgroups:**
 ```bash
-# Find mcp cgroup
-ps aux | grep mcp-server | grep -v grep
+# Find smcp cgroup
+ps aux | grep smcp-server | grep -v grep
 MCP_PID=12345
 
 # Check cgroup membership
 cat /proc/$MCP_PID/cgroup
 
 # Check memory limit
-cat /sys/fs/cgroup/memory/mcp/memory.limit_in_bytes
+cat /sys/fs/cgroup/memory/smcp/memory.limit_in_bytes
 
 # Check current usage
-cat /sys/fs/cgroup/memory/mcp/memory.usage_in_bytes
+cat /sys/fs/cgroup/memory/smcp/memory.usage_in_bytes
 
 # Check CPU limit
-cat /sys/fs/cgroup/cpu/mcp/cpu.cfs_quota_us
-cat /sys/fs/cgroup/cpu/mcp/cpu.cfs_period_us
+cat /sys/fs/cgroup/cpu/smcp/cpu.cfs_quota_us
+cat /sys/fs/cgroup/cpu/smcp/cpu.cfs_period_us
 ```
 
 **macOS limits (rlimit):**
@@ -678,7 +678,7 @@ cat /sys/fs/cgroup/cpu/mcp/cpu.cfs_period_us
 cat /proc/<PID>/limits  # Not available on macOS
 
 # Use process inspection
-ps -eo pid,rss,vsz | grep mcp  # Memory
+ps -eo pid,rss,vsz | grep smcp  # Memory
 
 # Check with getrusage (in code or lldb)
 ```
@@ -695,14 +695,14 @@ sudo nsenter -t $MCP_PID -n netstat -tuln
 # Should show only allowed connections
 
 # Test network access
-mcp run acme/package@1.0.0 --log-level debug 2>&1 | grep -i "network\|connection"
+smcp run acme/package@1.0.0 --log-level debug 2>&1 | grep -i "network\|connection"
 ```
 
 **macOS/Windows:**
 ```bash
 # Network isolation not supported
 # Check config
-cat ~/.mcp/config.yaml | grep -A 5 "security:" | grep -A 3 "network:"
+cat ~/.smcp/config.yaml | grep -A 5 "security:" | grep -A 3 "network:"
 
 # Document limitation
 echo "WARNING: Network isolation not available on this OS"
@@ -716,7 +716,7 @@ echo "WARNING: Network isolation not available on this OS"
 
 1. **Check exit code:**
    ```bash
-   mcp run acme/package@1.0.0
+   smcp run acme/package@1.0.0
    echo "Exit code: $?"
    ```
 
@@ -724,7 +724,7 @@ echo "WARNING: Network isolation not available on this OS"
    ```bash
    export MCP_LOG_LEVEL=debug
    export MCP_LOG_FORMAT=json
-   mcp run acme/package@1.0.0 2>&1 | tee debug.log
+   smcp run acme/package@1.0.0 2>&1 | tee debug.log
    ```
 
 3. **Analyze logs:**
@@ -743,17 +743,17 @@ echo "WARNING: Network isolation not available on this OS"
 
 5. **Check cache:**
    ```bash
-   mcp cache ls
+   smcp cache ls
    ```
 
 6. **Verify system capabilities:**
    ```bash
-   mcp doctor
+   smcp doctor
    ```
 
 7. **Trace system calls:**
    ```bash
-   strace -e trace=open,read,write,connect mcp run acme/package@1.0.0
+   strace -e trace=open,read,write,connect smcp run  acme/package@1.0.0
    ```
 
 8. **Inspect process:**
@@ -766,20 +766,20 @@ echo "WARNING: Network isolation not available on this OS"
 ### 8.2 Decision Tree
 
 ```
-Issue: mcp run fails
+Issue: smcp run fails
 
 ├─ Exit code?
-│  ├─ 1 → Configuration error → Check ~/.mcp/config.yaml, flags
+│  ├─ 1 → Configuration error → Check ~/.smcp/config.yaml, flags
 │  ├─ 2 → Network/Registry error → Test: curl registry.example.com
-│  ├─ 3 → Validation error → Check: mcp cache ls, digest mismatch
+│  ├─ 3 → Validation error → Check: smcp cache ls, digest mismatch
 │  ├─ 4 → Execution error → Check: MCP server logs, stderr
 │  ├─ 5 → Timeout → Increase: --timeout flag
 │  └─ 124 → Signal → Process killed, check: resource limits
 │
 ├─ Error in logs?
 │  ├─ "package not found" → Verify: org/name, registry URL
-│  ├─ "digest mismatch" → Try: mcp cache rm && mcp pull --no-cache
-│  ├─ "auth failed" → Check: mcp login, token expiration
+│  ├─ "digest mismatch" → Try: smcp cache rm && mcp pull --no-cache
+│  ├─ "auth failed" → Check: smcp login, token expiration
 │  ├─ "timeout" → Increase: --timeout, check server logs
 │  └─ "network denied" → Check: manifest, security policy
 │
@@ -789,7 +789,7 @@ Issue: mcp run fails
 │  └─ High memory → Monitor: ps, top, cgroup limits
 │
 └─ Sandbox issue?
-   ├─ Limits not applied → Check: mcp doctor, OS support
+   ├─ Limits not applied → Check: smcp doctor, OS support
    ├─ Network not isolated → Check: OS (Linux only in v1)
    └─ Subprocess blocked → Check: manifest, security policy
 ```
@@ -801,7 +801,7 @@ Issue: mcp run fails
 ### 9.1 Example: Package Not Found
 
 ```bash
-$ mcp run acme/hello-world@1.2.3
+$ smcp run acme/hello-world@1.2.3
 [ERROR] Failed to resolve acme/hello-world@1.2.3: package not found (404)
 
 # Debug:
@@ -817,69 +817,69 @@ $ curl -s https://registry.example.com/v1/packages/acme/hello-world/versions | j
 ]
 
 # Solution: Use correct version
-$ mcp run acme/hello-world@1.2.0  # ✓ Works
+$ smcp run acme/hello-world@1.2.0  # ✓ Works
 ```
 
 ### 9.2 Example: Digest Mismatch
 
 ```bash
-$ mcp run acme/tool@1.0.0
+$ smcp run acme/tool@1.0.0
 [ERROR] Digest validation failed for bundle
 [ERROR] Expected: sha256:abc123...
 [ERROR] Got:      sha256:xyz789...
 
 # Debug:
-$ mcp cache ls | grep abc123
+$ smcp cache ls | grep abc123
 sha256:abc123...   bundle    12.5MB   5 mins ago
 
 # Verify:
-$ sha256sum ~/.mcp/cache/bundles/sha256:abc123.../bundle.tar.gz
+$ sha256sum ~/.smcp/cache/bundles/sha256:abc123.../bundle.tar.gz
 xyz789... (doesn't match!)
 
 # Solution: Clear cache and re-download
-$ mcp cache rm sha256:abc123...
-$ mcp pull acme/tool@1.0.0 --no-cache
-$ mcp run acme/tool@1.0.0  # ✓ Works
+$ smcp cache rm sha256:abc123...
+$ smcp pull acme/tool@1.0.0 --no-cache
+$ smcp run acme/tool@1.0.0  # ✓ Works
 ```
 
 ### 9.3 Example: Timeout
 
 ```bash
-$ mcp run acme/slow-server@1.0.0 --timeout 10s
+$ smcp run acme/slow-server@1.0.0 --timeout 10s
 [ERROR] Process killed by timeout (10s exceeded)
 (Exit code 5)
 
 # Debug: Check server performance
-$ MCP_LOG_LEVEL=debug mcp run acme/slow-server@1.0.0 --timeout 30s 2>&1 | grep -i "start\|running\|exit"
+$ MCP_LOG_LEVEL=debug smcp run acme/slow-server@1.0.0 --timeout 30s 2>&1 | grep -i "start\|running\|exit"
 [DEBUG] Starting process: /bin/slow-server --mode stdio (PID 12345)
 [DEBUG] Process running (after 25s)
 [DEBUG] Process exited with code 0 (after 35s)
 
 # Solution: Increase timeout
-$ mcp run acme/slow-server@1.0.0 --timeout 60s  # ✓ Works
+$ smcp run acme/slow-server@1.0.0 --timeout 60s  # ✓ Works
 ```
 
 ### 9.4 Example: Memory Exceeded
 
 ```bash
-$ mcp run acme/memory-hog@1.0.0
+$ smcp run acme/memory-hog@1.0.0
 [ERROR] Process exceeded memory limit (512M)
 
 # Check limit
-$ grep max_memory ~/.mcp/config.yaml
+$ grep max_memory ~/.smcp/config.yaml
 max_memory: 512M
 
 # Monitor actual usage (in another terminal)
-$ watch -n 0.1 'ps aux | grep mcp-server'
+$ watch -n 0.1 'ps aux | grep smcp-server'
 MCP_SERVER 12345 25.3 600.0  ...  # Using 600MB (exceeded 512MB limit)
 
 # Solution: Increase limit or check for memory leak
-$ cat >> ~/.mcp/config.yaml << EOF
+$ cat >> ~/.smcp/config.yaml << EOF
 executor:
   max_memory: 1G
 EOF
 
-$ mcp run acme/memory-hog@1.0.0  # ✓ Works
+$ smcp run acme/memory-hog@1.0.0  # ✓ Works
 ```
 
 ---
@@ -893,14 +893,14 @@ When troubleshooting mcp-client:
 - [ ] Save logs to file for analysis (`2>&1 | tee debug.log`)
 - [ ] Test registry connectivity with curl
 - [ ] Verify package exists with correct version
-- [ ] Check cache for corruption (`mcp cache ls`)
-- [ ] Inspect system capabilities (`mcp doctor`)
+- [ ] Check cache for corruption (`smcp cache ls`)
+- [ ] Inspect system capabilities (`smcp doctor`)
 - [ ] Trace system calls with strace/dtrace
 - [ ] Monitor resource usage with ps/top/lsof
 - [ ] Check network with tcpdump/wireshark
 - [ ] Parse JSON logs with jq
 - [ ] Verify auth token is valid and not expired
-- [ ] Check permission for ~/.mcp directory
+- [ ] Check permission for ~/.smcp directory
 - [ ] Verify registry URL and network access
 
 ---
@@ -909,25 +909,25 @@ When troubleshooting mcp-client:
 
 ```bash
 # Basic debugging
-mcp doctor                           # Check system capabilities
-mcp --version                        # Check mcp-client version
+smcp doctor                           # Check system capabilities
+smcp --version                        # Check mcp-client version
 
 # Logging
 export MCP_LOG_LEVEL=debug          # Enable debug logs
 export MCP_LOG_FORMAT=json          # Use JSON format
-mcp run acme/pkg@1.0.0 2>&1 | tee run.log
+smcp run acme/pkg@1.0.0 2>&1 | tee run.log
 
 # Cache inspection
-mcp cache ls                          # List artifacts
-mcp cache rm sha256:...               # Remove artifact
-mcp cache rm --all                    # Clear cache
+smcp cache ls                          # List artifacts
+smcp cache rm sha256:...               # Remove artifact
+smcp cache rm --all                    # Clear cache
 
 # Network testing
 curl -v https://registry.example.com/...
 curl -w "@curl-format.txt" https://...
 
 # System tracing
-strace -f mcp run acme/pkg@1.0.0
+strace -f smcp run  acme/pkg@1.0.0
 lsof -p $(pgrep mcp)
 ps aux | grep mcp
 
@@ -936,7 +936,7 @@ jq 'select(.level=="ERROR")' run.log
 jq -r '.timestamp + " " + .message' run.log
 
 # Cache integrity
-mcp cache ls | while read line; do
+smcp cache ls | while read line; do
   digest=$(echo "$line" | awk '{print $1}')
   # Verify digest
 done
@@ -951,7 +951,7 @@ done
 3. **jq for log analysis** - Parse and query structured logs efficiently
 4. **Test externally first** - Use curl before debugging mcp
 5. **strace reveals truth** - See exactly what's happening at system level
-6. **Check system capabilities** - Run `mcp doctor` to verify sandbox support
+6. **Check system capabilities** - Run `smcp doctor` to verify sandbox support
 7. **Isolate variables** - Test registry, cache, and execution separately
 8. **Save logs for analysis** - Capture full debug logs for troubleshooting
 9. **Monitor in parallel** - Use another terminal to watch resource usage

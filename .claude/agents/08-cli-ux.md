@@ -10,17 +10,17 @@ Implementar la interfaz de línea de comandos (CLI) del launcher con una UX clar
 
 1. **Framework de CLI**
    - Usar cobra, urfave/cli, o flag stdlib (decidir uno)
-   - Estructura de comandos: `mcp <command> [args] [flags]`
+   - Estructura de comandos: `smcp <command> [args] [flags]`
    - Help texts claros con ejemplos
    - Autocompletado (bash, zsh) generado automáticamente
 
 2. **Comandos principales**
-   - `mcp run <ref>`: ejecutar servidor MCP
-   - `mcp pull <ref>`: pre-descargar sin ejecutar
-   - `mcp login`: autenticación con registry
-   - `mcp cache ls/rm/stats`: gestión de caché
-   - `mcp doctor`: diagnóstico de capacidades del sistema
-   - `mcp version`: mostrar versión del launcher
+   - `smcp run <ref>`: ejecutar servidor MCP
+   - `smcp pull <ref>`: pre-descargar sin ejecutar
+   - `smcp login`: autenticación con registry
+   - `smcp cache ls/rm/stats`: gestión de caché
+   - `smcp doctor`: diagnóstico de capacidades del sistema
+   - `smcp version`: mostrar versión del launcher
 
 3. **Flags globales**
    - `--registry <url>`: override URL del registry
@@ -38,16 +38,16 @@ Implementar la interfaz de línea de comandos (CLI) del launcher con una UX clar
 5. **Manejo de errores**
    - Mensajes de error user-friendly (no stack traces en modo normal)
    - Exit codes consistentes (0=success, 1=config error, 2=network, 3=validation, 4=execution, 5=timeout)
-   - Sugerencias de solución cuando sea posible (ej: "run mcp login first")
+   - Sugerencias de solución cuando sea posible (ej: "run smcp login first")
 
 6. **Interactividad**
-   - Confirmación antes de operaciones destructivas (`mcp cache rm --all`)
+   - Confirmación antes de operaciones destructivas (`smcp cache rm --all`)
    - Progreso de operaciones largas (descarga de bundles)
    - Spinner para operaciones rápidas (resolve)
 
 ## Entregables
 
-1. **Módulo `cmd/mcp-launcher/main.go`**
+1. **Módulo `cmd/smcp/main.go`**
    ```go
    package main
 
@@ -78,7 +78,7 @@ Implementar la interfaz de línea de comandos (CLI) del launcher con una UX clar
    )
 
    var rootCmd = &cobra.Command{
-       Use:   "mcp",
+       Use:   "smcp",
        Short: "MCP client launcher",
        Long:  `Launch and manage MCP servers from mcp-registry`,
    }
@@ -245,12 +245,12 @@ Implementar la interfaz de línea de comandos (CLI) del launcher con una UX clar
 
 ```bash
 # Compilar CLI
-go build -o mcp cmd/mcp-launcher/main.go
+go build -o smcp cmd/smcp/main.go
 
 # Test de help
-./mcp --help
-./mcp run --help
-./mcp cache --help
+./smcp --help
+./smcp run --help
+./smcp cache --help
 
 # Tests
 go test -v ./internal/cli/...
@@ -273,15 +273,15 @@ golangci-lint run ./internal/cli/...
 - **Provee a**: todos (interfaz de usuario del launcher)
 - **Recibe de**: architect (config, logger)
 - **Recibe de**: registry-integration (errores de red)
-- **Recibe de**: cache-store (comandos `mcp cache`)
-- **Recibe de**: sandbox-* (`mcp doctor`)
+- **Recibe de**: cache-store (comandos `smcp cache`)
+- **Recibe de**: sandbox-* (`smcp doctor`)
 
 ## Notas Adicionales
 
 ### Estructura de comandos
 
 ```
-mcp
+smcp
 ├── run <ref> [flags]
 ├── pull <ref>
 ├── login [--token] [--registry]
@@ -296,16 +296,16 @@ mcp
 ### Ejemplo de help text
 
 ```
-$ mcp run --help
+$ smcp run --help
 Run an MCP server from the registry
 
 Usage:
-  mcp run <ref> [flags]
+  smcp run <ref> [flags]
 
 Examples:
-  mcp run acme/hello-world@1.2.3
-  mcp run acme/tool@latest --timeout 60s
-  mcp run acme/secure@sha:abc123 --env-file .env
+  smcp run acme/hello-world@1.2.3
+  smcp run acme/tool@latest --timeout 60s
+  smcp run acme/secure@sha:abc123 --env-file .env
 
 Flags:
       --timeout duration     Execution timeout (default 5m0s)
@@ -321,7 +321,7 @@ Global Flags:
       --json                Output in JSON format
 ```
 
-### Output de `mcp run` (modo normal)
+### Output de `smcp run` (modo normal)
 
 ```
 [2026-01-18T10:30:00Z] Resolving acme/hello-world@1.2.3...
@@ -335,7 +335,7 @@ Global Flags:
 [2026-01-18T10:30:05Z] Server running (PID 12345)
 ```
 
-### Output de `mcp run` (modo `--json`)
+### Output de `smcp run` (modo `--json`)
 
 ```json
 {
@@ -357,7 +357,7 @@ Global Flags:
 | Code | Significado | Ejemplo |
 |------|-------------|---------|
 | 0 | Success | Ejecución exitosa |
-| 1 | Config error | `~/.mcp/config.yaml` inválido |
+| 1 | Config error | `~/.smcp/config.yaml` inválido |
 | 2 | Network error | Registry no alcanzable |
 | 3 | Validation error | Digest mismatch |
 | 4 | Execution error | Proceso MCP falló |

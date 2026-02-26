@@ -270,7 +270,7 @@ while true; do
 done &
 
 # Should fail safely (uses random name, not predictable path)
-mcp run test@1.0.0
+smcp run test@1.0.0
 ```
 
 ---
@@ -290,7 +290,7 @@ mcp run test@1.0.0
 
 **Directory Hierarchy in mcp-client**:
 ```
-~/.mcp/                         0o700 (sensitive: cache, auth)
+~/.smcp/                         0o700 (sensitive: cache, auth)
   cache/                        0o700
     manifests/                  0o700
     bundles/                    0o700
@@ -319,12 +319,12 @@ if err := os.MkdirAll(bundleDir, 0o700); err != nil {    // ✓ 0o700
 
 **Verification**:
 ```bash
-# Check mcp cache directory
-ls -la ~/.mcp/
+# Check smcp cache directory
+ls -la ~/.smcp/
 # Expected: drwx------ (0o700)
 
 # Check subdirectories
-ls -la ~/.mcp/cache/
+ls -la ~/.smcp/cache/
 # Expected: drwx------ for manifests, bundles
 
 # Check extracted bundle directory
@@ -941,13 +941,13 @@ func TestSafeFileWriter_DirectoryPermissions(t *testing.T) {
 ### Integration Tests
 ```bash
 # Path traversal prevention
-mcp run test/traversal@1.0.0 → FAIL (path traversal)
+smcp run test/traversal@1.0.0 → FAIL (path traversal)
 
 # Symlink safety
-mcp run test/symlinks@1.0.0 → FAIL (symlinks not allowed)
+smcp run test/symlinks@1.0.0 → FAIL (symlinks not allowed)
 
 # Permission enforcement
-mcp run test/permissions@1.0.0 → SUCCESS
+smcp run test/permissions@1.0.0 → SUCCESS
 ls -la /tmp/extracted/ → drwx------ (0o700), -rw------- (0o600)
 ```
 
@@ -981,7 +981,7 @@ tar -czf evil.tar.gz /tmp/evil/link
 ```bash
 # Attacker creates /tmp/mcp-bundle-1 as symlink before tool runs
 ln -s /etc/shadow /tmp/mcp-bundle-1
-mcp run test@1.0.0
+smcp run test@1.0.0
 ```
 **Defense**: os.MkdirTemp generates random names → SAFE
 
@@ -1099,11 +1099,11 @@ func extractBundle(data []byte, destDir string) error {
 ### Verify Permissions
 ```bash
 # Check cache directory
-ls -la ~/.mcp/cache/
+ls -la ~/.smcp/cache/
 # Expected: drwx------ (0o700)
 
 # Check cached files
-ls -la ~/.mcp/cache/manifests/
+ls -la ~/.smcp/cache/manifests/
 # Expected: -rw------- (0o600)
 
 # Check extracted bundle
@@ -1126,11 +1126,11 @@ readlink /tmp/extracted/link
 ### Monitor File Operations (Linux)
 ```bash
 # Trace file opens/creates
-strace -e openat,open,mkdir,symlink ./mcp run test@1.0.0 2>&1 | \
+strace -e openat,open,mkdir,symlink ./smcp run test@1.0.0 2>&1 | \
   grep -E "bundle|cache|extracted"
 
 # Verify all opens within allowed directory
-strace -e openat ./mcp run test@1.0.0 2>&1 | \
+strace -e openat ./smcp run test@1.0.0 2>&1 | \
   grep -v "/tmp/mcp-bundle" && echo "FAIL: writes outside bundle dir" || echo "PASS"
 ```
 
@@ -1139,7 +1139,7 @@ strace -e openat ./mcp run test@1.0.0 2>&1 | \
 # Monitor file system operations during extraction
 (while true; do ls -l /tmp/mcp-bundle-*/; sleep 0.1; done) &
 monitor_pid=$!
-mcp run test@1.0.0
+smcp run test@1.0.0
 kill $monitor_pid
 
 # Verify no orphaned temp files remain

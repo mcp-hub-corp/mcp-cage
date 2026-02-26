@@ -66,7 +66,7 @@ org/name@1.2.x
 
 **Example:**
 ```bash
-mcp run acme/hello-world@1.2.3
+smcp run acme/hello-world@1.2.3
 # Registry resolves to:
 # - manifest: sha256:abc123...
 # - bundle: sha256:def456...
@@ -86,7 +86,7 @@ org/name@sha:abc123
 
 **Example:**
 ```bash
-mcp run acme/hello-world@sha:abc123abc
+smcp run acme/hello-world@sha:abc123abc
 # Registry resolves to manifest + bundle for that commit
 ```
 
@@ -106,7 +106,7 @@ org/name@digest:sha256:abc123def456...
 
 **Example:**
 ```bash
-mcp run acme/hello-world@digest:sha256:abc123def456abc123def456abc123def456abc1
+smcp run acme/hello-world@digest:sha256:abc123def456abc123def456abc123def456abc1
 # Client downloads from:
 # GET /artifacts/sha256:abc123def456.../manifest
 # GET /artifacts/sha256:def456ghi789.../bundle
@@ -445,12 +445,12 @@ Authorization: Bearer <token>
 
 **Token acquisition:**
 ```bash
-mcp login --token <JWT>
+smcp login --token <JWT>
 ```
 
 **Stored in:**
 ```
-~/.mcp/auth.json
+~/.smcp/auth.json
 ```
 
 **Example token (JWT):**
@@ -480,7 +480,7 @@ eyJzdWIiOiJ1c2VyLTEyMyIsIm9yZyI6ImFjbWUiLCJleHAiOjE3MDY3OTIwMDB9.
 Tokens expire after 90 days by default. Client should handle 401 and prompt for re-login:
 ```
 [ERROR] Authentication failed (401): Token expired
-[INFO] Run 'mcp login' to refresh your token
+[INFO] Run 'smcp login' to refresh your token
 ```
 
 ---
@@ -490,7 +490,7 @@ Tokens expire after 90 days by default. Client should handle 401 and prompt for 
 Enterprise registries may use different token format:
 
 ```bash
-mcp login --registry https://custom.registry.com --token <custom-token>
+smcp login --registry https://custom.registry.com --token <custom-token>
 ```
 
 **Stored as:**
@@ -507,7 +507,7 @@ mcp login --registry https://custom.registry.com --token <custom-token>
 
 **Usage:**
 ```bash
-mcp run org/name@1.0.0 --registry https://custom.registry.com
+smcp run org/name@1.0.0 --registry https://custom.registry.com
 # Automatically uses token from auth.json
 ```
 
@@ -518,7 +518,7 @@ mcp run org/name@1.0.0 --registry https://custom.registry.com
 Public packages don't require authentication:
 
 ```bash
-mcp run org/public-package@1.0.0
+smcp run org/public-package@1.0.0
 # No token needed, registry accessible without Authorization header
 ```
 

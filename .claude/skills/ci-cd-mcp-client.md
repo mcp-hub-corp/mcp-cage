@@ -128,7 +128,7 @@ jobs:
         go-version: '1.22'
 
     - name: Build
-      run: go build -v ./cmd/mcp
+      run: go build -v ./cmd/smcp
 
     - name: Verify binary
       run: ./mcp --version || mcp.exe --version
@@ -162,7 +162,7 @@ jobs:
 # Run locally to reproduce
 go test -v ./... -run TestName
 golangci-lint run ./...
-go build ./cmd/mcp
+go build ./cmd/smcp
 ```
 
 ---
@@ -522,11 +522,11 @@ jobs:
 
     - name: Build binaries
       run: |
-        GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-linux-amd64 ./cmd/mcp
-        GOOS=linux GOARCH=arm64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-linux-arm64 ./cmd/mcp
-        GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-darwin-amd64 ./cmd/mcp
-        GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-darwin-arm64 ./cmd/mcp
-        GOOS=windows GOARCH=amd64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-windows-amd64.exe ./cmd/mcp
+        GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-linux-amd64 ./cmd/smcp
+        GOOS=linux GOARCH=arm64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-linux-arm64 ./cmd/smcp
+        GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-darwin-amd64 ./cmd/smcp
+        GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-darwin-arm64 ./cmd/smcp
+        GOOS=windows GOARCH=amd64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-windows-amd64.exe ./cmd/smcp
 
     - name: Create checksums
       run: |
@@ -585,7 +585,7 @@ gh run view <run-id>
 version: 2
 
 builds:
-  - main: ./cmd/mcp
+  - main: ./cmd/smcp
     binary: mcp
     ldflags: -X github.com/security-mcp/mcp-client/internal/cli.Version={{.Version}}
     goos:
@@ -649,7 +649,7 @@ LDFLAGS := -X github.com/security-mcp/mcp-client/internal/cli.Version=$(VERSION)
            -X github.com/security-mcp/mcp-client/internal/cli.BuildDate=$(BUILD_DATE)
 
 build: ## Build the mcp binary
-	go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/mcp
+	go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/smcp
 
 test: ## Run tests
 	go test -v -race -coverprofile=coverage.out ./...
@@ -665,7 +665,7 @@ clean: ## Clean build artifacts
 	go clean
 
 install: build ## Install the binary
-	go install -ldflags "$(LDFLAGS)" ./cmd/mcp
+	go install -ldflags "$(LDFLAGS)" ./cmd/smcp
 
 all: fmt lint test build ## Run all targets
 ```
@@ -686,10 +686,10 @@ make clean      # Clean artifacts
 **Strip symbols for smaller binary:**
 ```bash
 # Debug build (larger, with symbols)
-go build -o mcp ./cmd/mcp
+go build -o smcp ./cmd/smcp
 
 # Release build (smaller, no symbols)
-go build -ldflags "-s -w" -o mcp ./cmd/mcp
+go build -ldflags "-s -w" -o mcp ./cmd/smcp
 
 # Check size difference
 ls -lh mcp
@@ -698,13 +698,13 @@ ls -lh mcp
 **Cross-compilation:**
 ```bash
 # Build for Linux ARM64
-GOOS=linux GOARCH=arm64 go build -o mcp-linux-arm64 ./cmd/mcp
+GOOS=linux GOARCH=arm64 go build -o smcp-linux-arm64 ./cmd/smcp
 
 # Build for macOS (Intel)
-GOOS=darwin GOARCH=amd64 go build -o mcp-darwin-amd64 ./cmd/mcp
+GOOS=darwin GOARCH=amd64 go build -o smcp-darwin-amd64 ./cmd/smcp
 
 # Build for Windows
-GOOS=windows GOARCH=amd64 go build -o mcp-windows-amd64.exe ./cmd/mcp
+GOOS=windows GOARCH=amd64 go build -o smcp-windows-amd64.exe ./cmd/smcp
 ```
 
 ---
@@ -935,7 +935,7 @@ strategy:
 - run: go test -parallel 1 ./...
 
 # Reduce build optimization
-- run: go build -gcflags='-N' ./cmd/mcp
+- run: go build -gcflags='-N' ./cmd/smcp
 ```
 
 ### 13.4 Network Timeouts
@@ -1046,14 +1046,14 @@ When setting up CI/CD for mcp-client:
 # Local testing (mirrors CI)
 go test -v -race -coverprofile=coverage.out ./...
 golangci-lint run
-go build -v ./cmd/mcp
+go build -v ./cmd/smcp
 
 # Test on specific Go version
 go1.21 test ./...
 
 # Build for release
-GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X ..." -o mcp-linux-amd64 ./cmd/mcp
-GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w -X ..." -o mcp-darwin-arm64 ./cmd/mcp
+GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X ..." -o mcp-linux-amd64 ./cmd/smcp
+GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w -X ..." -o mcp-darwin-arm64 ./cmd/smcp
 
 # Create checksums
 sha256sum mcp-* > checksums.txt

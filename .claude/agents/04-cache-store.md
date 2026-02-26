@@ -9,7 +9,7 @@ Implementar un almacenamiento local content-addressable para manifests y bundles
 ## Responsabilidades
 
 1. **Almacenamiento por digest**
-   - Organizar caché en `~/.mcp/cache/{manifests,bundles}/sha256:abc.../`
+   - Organizar caché en `~/.smcp/cache/{manifests,bundles}/sha256:abc.../`
    - Guardar archivos con permisos `0600` (solo owner)
    - Validar digest al guardar (calcular SHA-256 y comparar con digest esperado)
 
@@ -25,7 +25,7 @@ Implementar un almacenamiento local content-addressable para manifests y bundles
    - Lock por artefacto individual (no lock global de toda la caché)
 
 4. **Metadata tracking**
-   - Guardar metadata en `~/.mcp/cache/metadata.db` (sqlite o JSON)
+   - Guardar metadata en `~/.smcp/cache/metadata.db` (sqlite o JSON)
    - Campos: digest, type (manifest/bundle), size, created_at, last_used, access_count
    - Actualizar `last_used` en cada `Get()`
 
@@ -36,17 +36,17 @@ Implementar un almacenamiento local content-addressable para manifests y bundles
    - No eliminar artefactos en uso (check lock)
 
 6. **Comandos CLI**
-   - `mcp cache ls`: listar artefactos (digest, type, size, last used)
-   - `mcp cache rm <digest>`: eliminar artefacto
-   - `mcp cache rm --all`: limpiar toda la caché
-   - `mcp cache stats`: estadísticas (total size, hit rate si se trackea)
+   - `smcp cache ls`: listar artefactos (digest, type, size, last used)
+   - `smcp cache rm <digest>`: eliminar artefacto
+   - `smcp cache rm --all`: limpiar toda la caché
+   - `smcp cache stats`: estadísticas (total size, hit rate si se trackea)
 
 ## Entregables
 
 1. **Módulo `internal/cache/store.go`**
    ```go
    type Store struct {
-       dir      string // ~/.mcp/cache
+       dir      string // ~/.smcp/cache
        metadata MetadataDB
    }
 
@@ -117,7 +117,7 @@ Implementar un almacenamiento local content-addressable para manifests y bundles
 - [ ] Locking concurrente funciona (test con goroutines simultáneas)
 - [ ] Metadata tracking persiste correctamente (sqlite o JSON)
 - [ ] Eviction LRU funciona y respeta límite de tamaño
-- [ ] Comandos `mcp cache ls/rm/stats` funcionales
+- [ ] Comandos `smcp cache ls/rm/stats` funcionales
 - [ ] Tests de concurrencia pasan sin race conditions (`go test -race`)
 - [ ] Coverage >80%
 
@@ -144,7 +144,7 @@ golangci-lint run ./internal/cache/...
 - **NO** eliminar artefactos lockeados durante eviction
 - **NO** asumir que filesystem es case-sensitive (Windows es case-insensitive)
 - **NO** hardcodear path de caché (siempre configurable)
-- **NO** exponer datos de caché fuera de `~/.mcp/cache` (ej: tmpdir global)
+- **NO** exponer datos de caché fuera de `~/.smcp/cache` (ej: tmpdir global)
 - **NO** ignorar errores de I/O (siempre propagar)
 
 ## Coordinación con Otros Agentes
@@ -153,7 +153,7 @@ golangci-lint run ./internal/cache/...
 - **Provee a**: manifest-validator (manifests desde caché)
 - **Provee a**: executor (bundles desde caché)
 - **Recibe de**: registry-integration (nuevos artefactos descargados)
-- **Recibe de**: cli-ux (comandos `mcp cache`)
+- **Recibe de**: cli-ux (comandos `smcp cache`)
 - **Recibe de**: architect (interfaz `Store`)
 
 ## Notas Adicionales
@@ -161,7 +161,7 @@ golangci-lint run ./internal/cache/...
 ### Estructura de directorios de caché
 
 ```
-~/.mcp/cache/
+~/.smcp/cache/
   manifests/
     sha256:abc123.../
       manifest.json
@@ -223,7 +223,7 @@ for _, entry := range entries {
 }
 ```
 
-### Output de `mcp cache ls`
+### Output de `smcp cache ls`
 
 ```
 DIGEST                                          TYPE      SIZE     LAST USED
