@@ -18,6 +18,7 @@ import (
 	"github.com/security-mcp/mcp-client/internal/cache"
 	"github.com/security-mcp/mcp-client/internal/executor"
 	"github.com/security-mcp/mcp-client/internal/manifest"
+	"github.com/security-mcp/mcp-client/internal/mcp"
 	"github.com/security-mcp/mcp-client/internal/policy"
 	"github.com/security-mcp/mcp-client/internal/registry"
 	"github.com/security-mcp/mcp-client/internal/sandbox"
@@ -26,12 +27,13 @@ import (
 
 // runCmdFlags holds flags for the run command
 type runCmdFlags struct {
-	timeout   string
-	envFile   string
-	noCache   bool
-	noSandbox bool
-	trust     bool
-	secretEnv map[string]string
+	timeout          string
+	envFile          string
+	noCache          bool
+	noSandbox        bool
+	trust            bool
+	warningThreshold int
+	secretEnv        map[string]string
 }
 
 var runFlags runCmdFlags
@@ -43,6 +45,7 @@ func init() {
 	runCmd.Flags().BoolVar(&runFlags.noCache, "no-cache", false, "Force download without using cache")
 	runCmd.Flags().BoolVar(&runFlags.noSandbox, "no-sandbox", false, "Disable process sandboxing (use with caution)")
 	runCmd.Flags().BoolVar(&runFlags.trust, "trust", false, "Skip interactive confirmation for low-score packages")
+	runCmd.Flags().IntVar(&runFlags.warningThreshold, "warning-threshold", 80, "Security score threshold for LLM security warnings (0-100)")
 }
 
 // runMCPServer executes an MCP server from a package reference
@@ -520,6 +523,29 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		if !ui.ConfirmLowScore(secScore) {
 			return fmt.Errorf("security score %d/100 is below 80; use --trust to skip this check", secScore)
 		}
+	}
+
+	// Inject security warning into MCP protocol for LLM awareness.
+	// Only activated when --trust is set (user skips interactive confirmation) AND
+	// the security score is below the warning threshold. This ensures the LLM
+	// receives the warning even though the human doesn't see the terminal.
+	warningThreshold := cfg.Policy.WarningThreshold
+	if runFlags.warningThreshold != 80 {
+		// CLI flag overrides config
+		warningThreshold = runFlags.warningThreshold
+	}
+	if runFlags.trust && mcp.NeedsWarning(secScore, warningThreshold) {
+		stdioExec.SetSecurityWarning(&mcp.SecurityWarning{
+			PackageName: fmt.Sprintf("%s/%s", org, name),
+			Score:       secScore,
+			CertLevel:   certLevel,
+			Findings:    findings,
+			Origin:      origin,
+		})
+		logger.Debug("security warning proxy enabled",
+			slog.Int("score", secScore),
+			slog.Int("threshold", warningThreshold),
+		)
 	}
 
 	// Log execution start
