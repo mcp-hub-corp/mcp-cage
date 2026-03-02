@@ -249,9 +249,9 @@ func TestProxy_TimeoutFallback(t *testing.T) {
 	}
 
 	clientToProxyR, clientToProxyW := io.Pipe()
-	_, proxyToClientW := io.Pipe()
-	_, proxyToServerW := io.Pipe()
-	serverToProxyR, _ := io.Pipe() // Server never responds
+	proxyToClientR, proxyToClientW := io.Pipe()
+	proxyToServerR, proxyToServerW := io.Pipe()
+	serverToProxyR, serverToProxyW := io.Pipe()
 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	proxy := NewMCPProxy(clientToProxyR, proxyToClientW, serverToProxyR, proxyToServerW, warning, logger)
@@ -262,18 +262,24 @@ func TestProxy_TimeoutFallback(t *testing.T) {
 		done <- proxy.Run()
 	}()
 
-	// Send something but server never responds
+	// Send init request but server never responds
 	_, _ = clientToProxyW.Write([]byte(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}` + "\n"))
 
-	// Should not hang forever — timeout kicks in
+	// Wait for timeout to fire, then close all pipes to let proxy finish
+	time.Sleep(400 * time.Millisecond)
+
+	// Close pipes to unblock all goroutines
+	clientToProxyW.Close()
+	serverToProxyW.Close()
+	proxyToServerR.Close()
+	proxyToClientR.Close()
+
 	select {
 	case <-done:
-		// Proxy finished (raw copy will fail because pipes close)
-	case <-time.After(2 * time.Second):
-		// Also acceptable — the proxy switched to raw copy
+		// Proxy finished after timeout and cleanup
+	case <-time.After(5 * time.Second):
+		t.Fatal("proxy did not finish after timeout and pipe close")
 	}
-
-	clientToProxyW.Close()
 }
 
 func TestProxy_MalformedJSONForwarded(t *testing.T) {
