@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/security-mcp/mcp-client/internal/manifest"
+	"github.com/security-mcp/mcp-client/internal/mcp"
 	"github.com/security-mcp/mcp-client/internal/policy"
 	"github.com/security-mcp/mcp-client/internal/sandbox"
 )
@@ -22,13 +23,14 @@ type Executor interface {
 
 // STDIOExecutor executes MCP servers using STDIO transport
 type STDIOExecutor struct {
-	workDir   string
-	limits    *policy.ExecutionLimits
-	perms     *manifest.PermissionsInfo
-	env       map[string]string
-	logger    *slog.Logger
-	noSandbox bool
-	stderr    io.Writer
+	workDir         string
+	limits          *policy.ExecutionLimits
+	perms           *manifest.PermissionsInfo
+	env             map[string]string
+	logger          *slog.Logger
+	noSandbox       bool
+	stderr          io.Writer
+	securityWarning *mcp.SecurityWarning // nil = no proxy, direct passthrough
 }
 
 // NewSTDIOExecutor creates a new STDIO executor
@@ -93,6 +95,15 @@ func (e *STDIOExecutor) SetStderr(w io.Writer) {
 	e.stderr = w
 }
 
+// SetSecurityWarning configures a security warning to inject into the MCP
+// protocol via a STDIO proxy. When set, the executor creates pipes instead of
+// connecting stdin/stdout directly, and runs an MCPProxy that intercepts the
+// init handshake to inject the warning. After the handshake, the proxy
+// switches to raw io.Copy for zero overhead.
+func (e *STDIOExecutor) SetSecurityWarning(w *mcp.SecurityWarning) {
+	e.securityWarning = w
+}
+
 // Execute starts the MCP server process via STDIO and waits for completion
 func (e *STDIOExecutor) Execute(ctx context.Context, entrypoint *manifest.Entrypoint, bundlePath string) error {
 	if entrypoint == nil {
@@ -155,7 +166,107 @@ func (e *STDIOExecutor) Execute(ctx context.Context, entrypoint *manifest.Entryp
 	// Set environment
 	cmd.Env = e.buildEnv()
 
-	// Connect STDIO
+	// Connect STDIO — either direct passthrough or via proxy
+	if e.securityWarning != nil {
+		// Proxy mode: intercept STDIO to inject security warnings
+		stdinPipe, stdinErr := cmd.StdinPipe()
+		if stdinErr != nil {
+			return fmt.Errorf("creating stdin pipe for proxy: %w", stdinErr)
+		}
+		stdoutPipe, stdoutErr := cmd.StdoutPipe()
+		if stdoutErr != nil {
+			return fmt.Errorf("creating stdout pipe for proxy: %w", stdoutErr)
+		}
+		cmd.Stderr = e.stderr
+
+		proxy := mcp.NewMCPProxy(os.Stdin, os.Stdout, stdoutPipe, stdinPipe, e.securityWarning, e.logger)
+
+		// Start the proxy after cmd.Start() below — deferred to after Start
+		defer func() {
+			// proxy.Run will be started in a goroutine after cmd.Start
+		}()
+
+		// We need to start the proxy after cmd.Start, so we use a closure
+		// captured by the startProxy variable
+		startProxy := func() {
+			go func() {
+				if proxyErr := proxy.Run(); proxyErr != nil {
+					e.logger.Debug("mcp proxy finished", slog.String("error", proxyErr.Error()))
+				}
+			}()
+		}
+
+		// Apply sandbox restrictions (unless --no-sandbox is set)
+		sb := sandbox.New()
+		if e.noSandbox {
+			e.logger.Warn("SECURITY: sandbox disabled via --no-sandbox flag",
+				slog.String("command", commandPath),
+			)
+		} else {
+			if err := sb.Apply(cmd, e.limits, e.perms); err != nil {
+				e.logger.Error("failed to apply sandbox restrictions",
+					slog.String("error", err.Error()),
+					slog.String("sandbox", sb.Name()),
+				)
+				return fmt.Errorf("sandbox apply failed (use --no-sandbox to bypass): %w", err)
+			}
+		}
+
+		// Start the process
+		if err := cmd.Start(); err != nil {
+			return fmt.Errorf("failed to start process: %w", err)
+		}
+
+		pid := cmd.Process.Pid
+		e.logger.Debug("process started with proxy", slog.Int("pid", pid))
+
+		// Apply post-spawn sandbox restrictions
+		if !e.noSandbox {
+			if err := sb.PostStart(pid, e.limits); err != nil {
+				e.logger.Warn("failed to apply post-start sandbox restrictions",
+					slog.String("error", err.Error()),
+					slog.String("sandbox", sb.Name()),
+				)
+			}
+		}
+
+		// Start the proxy now that the process is running
+		startProxy()
+
+		// Ensure cleanup of sandbox resources after process exits
+		defer func() {
+			if cleanupErr := sb.Cleanup(pid); cleanupErr != nil {
+				e.logger.Debug("sandbox cleanup warning",
+					slog.String("error", cleanupErr.Error()),
+					slog.String("sandbox", sb.Name()),
+				)
+			}
+		}()
+
+		// Wait for process to complete or context to cancel
+		err := cmd.Wait()
+
+		if ctx.Err() == context.DeadlineExceeded {
+			e.logger.Warn("process timeout exceeded", slog.Duration("timeout", e.limits.Timeout))
+			return fmt.Errorf("execution timeout exceeded: %s", e.limits.Timeout)
+		}
+
+		if err != nil {
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				e.logger.Info("process exited with error",
+					slog.Int("exit_code", exitErr.ExitCode()),
+					slog.String("error", err.Error()),
+				)
+				return fmt.Errorf("process exited with code %d: %w", exitErr.ExitCode(), err)
+			}
+			return fmt.Errorf("process execution error: %w", err)
+		}
+
+		e.logger.Info("process completed successfully")
+		return nil
+	}
+
+	// Direct passthrough mode (no proxy)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = e.stderr

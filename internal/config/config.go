@@ -35,12 +35,13 @@ type Config struct {
 
 // PolicyConfig holds policy enforcement settings
 type PolicyConfig struct {
-	AllowedOrigins []string                          `mapstructure:"allowed_origins"` // Empty = allow all origins
-	MinCertLevel   int                               `mapstructure:"min_cert_level"`  // 0-3, default 0 (no minimum)
-	CertLevelMode  string                            `mapstructure:"cert_level_mode"` // strict, warn, disabled
-	MinScore       int                               `mapstructure:"min_score"`       // 0-100, default 0 (no minimum)
-	ScoreMode      string                            `mapstructure:"score_mode"`      // strict, warn, disabled
-	Environments   map[string]map[string]interface{} `mapstructure:"environments"`    // Environment-specific overrides
+	AllowedOrigins   []string                          `mapstructure:"allowed_origins"`   // Empty = allow all origins
+	MinCertLevel     int                               `mapstructure:"min_cert_level"`    // 0-3, default 0 (no minimum)
+	CertLevelMode    string                            `mapstructure:"cert_level_mode"`   // strict, warn, disabled
+	MinScore         int                               `mapstructure:"min_score"`         // 0-100, default 0 (no minimum)
+	ScoreMode        string                            `mapstructure:"score_mode"`        // strict, warn, disabled
+	WarningThreshold int                               `mapstructure:"warning_threshold"` // Score threshold for LLM security warnings (default 80)
+	Environments     map[string]map[string]interface{} `mapstructure:"environments"`      // Environment-specific overrides
 }
 
 // LoadConfig loads configuration from file and environment variables
@@ -70,6 +71,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetDefault("policy.cert_level_mode", "disabled") // No enforcement by default
 	viper.SetDefault("policy.min_score", 0)                // No minimum by default
 	viper.SetDefault("policy.score_mode", "disabled")      // No enforcement by default
+	viper.SetDefault("policy.warning_threshold", 80)       // LLM security warning threshold
 
 	// Set config file location
 	configDir := filepath.Join(getHomeDir(), ".smcp")
