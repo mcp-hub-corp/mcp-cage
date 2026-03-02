@@ -33,7 +33,8 @@ No verification. No limits. No sandboxing. No audit trail. For production enviro
 1. **Verifies** every package against its SHA-256 digest before execution
 2. **Sandboxes** processes with CPU, memory, network, and filesystem limits
 3. **Enforces** certification policies (only run code that passed security analysis)
-4. **Audits** every execution with structured logs and automatic secret redaction
+4. **Warns LLMs** about risky servers by injecting security warnings into the MCP protocol
+5. **Audits** every execution with structured logs and automatic secret redaction
 
 Packages are analyzed upstream by [MCP Hub Platform](https://mcp-hub.info) for **14 classes of security vulnerabilities** and assigned a certification level (0-3) before they ever reach your machine.
 
@@ -46,6 +47,7 @@ Packages are analyzed upstream by [MCP Hub Platform](https://mcp-hub.info) for *
 | Sandboxing | None (full system access) | CPU, memory, PID, FD limits |
 | Network | Unrestricted | Default-deny (Linux) |
 | Filesystem | Full access | Confined to workdir (Linux) |
+| LLM awareness | None | Injects security warnings into MCP protocol |
 | Secret handling | Visible in env/logs | Automatically redacted |
 | Audit trail | None | Structured JSON logs |
 
@@ -165,6 +167,36 @@ CLI flags override config. Environment variables use `MCP_` prefix (`MCP_REGISTR
 
 ---
 
+## LLM Security Warnings
+
+When LLMs (Claude Desktop, Cursor, Windsurf) run MCP servers via `smcp run --trust`, the human user never sees the terminal. `smcp` solves this by injecting security warnings directly into the MCP protocol for packages with low security scores.
+
+```json
+{
+  "mcpServers": {
+    "data-tool": {
+      "command": "smcp",
+      "args": ["run", "--trust", "acme/data-tool@latest"]
+    }
+  }
+}
+```
+
+If `acme/data-tool` scores below 80, `smcp` intercepts the MCP init handshake and:
+1. **Prepends a warning to `instructions`** in the `initialize` response -- the LLM reads it and tells the user
+2. **Sends a `notifications/message`** with level `warning` -- some clients show it as a UI banner
+
+After the handshake (3-4 messages), the proxy switches to raw passthrough with zero overhead.
+
+```bash
+# Custom threshold (default: 80)
+smcp run --trust --warning-threshold 60 acme/tool@latest
+```
+
+Config: `policy.warning_threshold: 80` in `~/.smcp/config.yaml`.
+
+---
+
 ## Platform support
 
 | | Linux | macOS | Windows |
@@ -185,6 +217,7 @@ CLI flags override config. Environment variables use `MCP_` prefix (`MCP_REGISTR
 |---|---|
 | [Architecture](./docs/OVERVIEW.md) | How the pieces fit together |
 | [Security model](./docs/SECURITY.md) | Threat model and invariants |
+| [LLM security warnings](https://docs.mcphub.io/guides/llm-security-warnings/) | Protocol-level warnings for AI assistants |
 | [Examples](./docs/EXAMPLES.md) | Usage patterns and CI/CD integration |
 | [Linux sandbox](./docs/LINUX_SANDBOX.md) | cgroups, namespaces, Landlock, seccomp |
 | [Config reference](./docs/config.example.yaml) | All available options |
