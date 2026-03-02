@@ -76,8 +76,10 @@ func (p *MCPProxy) Run() error {
 		done <- p.handleHandshake(clientBuf, serverBuf)
 	}()
 
+	handshakeCompleted := false
 	select {
 	case err := <-done:
+		handshakeCompleted = true
 		if err != nil {
 			p.logger.Warn("handshake interception failed, switching to raw passthrough",
 				slog.String("error", err.Error()))
@@ -88,7 +90,15 @@ func (p *MCPProxy) Run() error {
 	}
 
 	// Phase 2: Raw bidirectional copy
-	return p.rawCopy(clientBuf, serverBuf)
+	if handshakeCompleted {
+		// Handshake goroutine has exited — safe to use buffered readers
+		// (preserves any data already buffered during handshake).
+		return p.rawCopy(clientBuf, serverBuf)
+	}
+
+	// Timeout: handshake goroutine still owns the buffered readers.
+	// Use the raw underlying readers to avoid data race on bufio.Reader.
+	return p.rawCopyDirect()
 }
 
 // handleHandshake manages the init handshake interception.
@@ -242,6 +252,41 @@ func (p *MCPProxy) buildNotification() JSONRPCMessage {
 		Method:  "notifications/message",
 		Params:  paramsBytes,
 	}
+}
+
+// rawCopyDirect starts bidirectional raw copy using the underlying readers
+// directly, bypassing the buffered readers. Used when the handshake goroutine
+// timed out and still owns the bufio.Readers.
+func (p *MCPProxy) rawCopyDirect() error {
+	var wg sync.WaitGroup
+	errCh := make(chan error, 2)
+
+	wg.Add(2)
+
+	// Client → Server
+	go func() {
+		defer wg.Done()
+		if _, err := io.Copy(p.serverWriter, p.clientReader); err != nil {
+			errCh <- fmt.Errorf("client→server copy: %w", err)
+		}
+	}()
+
+	// Server → Client
+	go func() {
+		defer wg.Done()
+		if _, err := io.Copy(p.clientWriter, p.serverReader); err != nil {
+			errCh <- fmt.Errorf("server→client copy: %w", err)
+		}
+	}()
+
+	wg.Wait()
+	close(errCh)
+
+	// Return first error if any
+	for err := range errCh {
+		return err
+	}
+	return nil
 }
 
 // rawCopy starts bidirectional raw copy between client and server.
