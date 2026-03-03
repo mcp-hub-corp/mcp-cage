@@ -3,9 +3,11 @@ package mcp
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -676,4 +678,210 @@ func TestBuildSandboxErrorNotification(t *testing.T) {
 	assert.Contains(t, params.Data, "SMCP SANDBOX ALERT")
 	assert.Contains(t, params.Data, "Try --allow-write /tmp/test")
 	assert.Contains(t, params.Data, "MUST inform the user")
+}
+
+func TestProxy_StderrScanning_InjectsNotification(t *testing.T) {
+	warning := &SecurityWarning{
+		PackageName: "acme/test",
+		Score:       85,
+		CertLevel:   2,
+		SandboxContext: &SandboxContext{
+			Platform: "linux",
+		},
+	}
+
+	// Pipes for client ↔ proxy ↔ server
+	clientToProxyR, clientToProxyW := io.Pipe()
+	proxyToClientR, proxyToClientW := io.Pipe()
+	proxyToServerR, proxyToServerW := io.Pipe()
+	serverToProxyR, serverToProxyW := io.Pipe()
+
+	// Stderr pipe: simulates MCP server stderr output
+	stderrR, stderrW := io.Pipe()
+	var stderrForward bytes.Buffer
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	proxy := NewMCPProxy(clientToProxyR, proxyToClientW, serverToProxyR, proxyToServerW, warning, logger)
+	proxy.SetStderr(stderrR, &stderrForward)
+
+	// Start mock server
+	go mockMCPServer(proxyToServerR, serverToProxyW, "")
+
+	// Start proxy
+	proxyDone := make(chan error, 1)
+	go func() {
+		proxyDone <- proxy.Run()
+	}()
+
+	// Client sends initialize request
+	initReq := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05"}}` + "\n"
+	_, err := clientToProxyW.Write([]byte(initReq))
+	require.NoError(t, err)
+
+	// Read output — collect everything from proxy
+	var output bytes.Buffer
+	readDone := make(chan struct{})
+	go func() {
+		buf := make([]byte, 8192)
+		for {
+			n, readErr := proxyToClientR.Read(buf)
+			if n > 0 {
+				output.Write(buf[:n])
+			}
+			if readErr != nil {
+				break
+			}
+			// Wait until we see a stderr-injected sandbox notification
+			if strings.Contains(output.String(), "mcp-hub-sandbox") &&
+				strings.Count(output.String(), "notifications/message") >= 2 {
+				break
+			}
+		}
+		close(readDone)
+	}()
+
+	// Client sends initialized notification
+	time.Sleep(100 * time.Millisecond)
+	initNotif := `{"jsonrpc":"2.0","method":"notifications/initialized"}` + "\n"
+	_, err = clientToProxyW.Write([]byte(initNotif))
+	require.NoError(t, err)
+
+	// Wait a bit for proxy to enter error-scanning mode, then write stderr error
+	time.Sleep(200 * time.Millisecond)
+	_, err = stderrW.Write([]byte("[Errno 13] Permission denied: '/etc/secret'\n"))
+	require.NoError(t, err)
+
+	// Wait for output
+	select {
+	case <-readDone:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for stderr sandbox notification")
+	}
+
+	outputStr := output.String()
+
+	// Verify the sandbox notification was injected from stderr scanning
+	assert.Contains(t, outputStr, "SMCP SANDBOX ALERT")
+	assert.Contains(t, outputStr, "/etc/secret")
+	assert.Contains(t, outputStr, "--allow-write")
+
+	// Verify stderr was also forwarded to the forward writer
+	assert.Contains(t, stderrForward.String(), "Permission denied")
+
+	// Cleanup
+	clientToProxyW.Close()
+	serverToProxyW.Close()
+	stderrW.Close()
+}
+
+func TestProxy_StderrScanning_NoFalsePositives(t *testing.T) {
+	warning := &SecurityWarning{
+		PackageName: "acme/test",
+		Score:       85,
+		CertLevel:   2,
+		SandboxContext: &SandboxContext{
+			Platform: "linux",
+		},
+	}
+
+	clientToProxyR, clientToProxyW := io.Pipe()
+	proxyToClientR, proxyToClientW := io.Pipe()
+	proxyToServerR, proxyToServerW := io.Pipe()
+	serverToProxyR, serverToProxyW := io.Pipe()
+
+	stderrR, stderrW := io.Pipe()
+	var stderrForward bytes.Buffer
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	proxy := NewMCPProxy(clientToProxyR, proxyToClientW, serverToProxyR, proxyToServerW, warning, logger)
+	proxy.SetStderr(stderrR, &stderrForward)
+
+	go mockMCPServer(proxyToServerR, serverToProxyW, "")
+
+	go func() {
+		_ = proxy.Run()
+	}()
+
+	// Start reading output BEFORE sending handshake (pipe is unbuffered)
+	var output bytes.Buffer
+	outputDone := make(chan struct{})
+	go func() {
+		buf := make([]byte, 8192)
+		for {
+			n, readErr := proxyToClientR.Read(buf)
+			if n > 0 {
+				output.Write(buf[:n])
+			}
+			if readErr != nil {
+				break
+			}
+			// Wait for the handshake notification (security warning)
+			if strings.Contains(output.String(), "notifications/message") {
+				break
+			}
+		}
+		close(outputDone)
+	}()
+
+	// Handshake
+	_, _ = clientToProxyW.Write([]byte(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05"}}` + "\n"))
+	time.Sleep(100 * time.Millisecond)
+	_, _ = clientToProxyW.Write([]byte(`{"jsonrpc":"2.0","method":"notifications/initialized"}` + "\n"))
+
+	select {
+	case <-outputDone:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timeout waiting for handshake")
+	}
+
+	// Now write normal stderr output (no sandbox error patterns)
+	_, _ = stderrW.Write([]byte("INFO: Server started on port 8080\n"))
+	_, _ = stderrW.Write([]byte("DEBUG: Loading configuration\n"))
+
+	// Give time for processing
+	time.Sleep(200 * time.Millisecond)
+
+	outputStr := output.String()
+
+	// Should have the handshake notification but NOT a sandbox alert
+	assert.Contains(t, outputStr, "notifications/message")
+	assert.NotContains(t, outputStr, "SMCP SANDBOX ALERT")
+
+	// Stderr should be forwarded
+	assert.Contains(t, stderrForward.String(), "Server started on port 8080")
+
+	clientToProxyW.Close()
+	serverToProxyW.Close()
+	stderrW.Close()
+}
+
+func TestProxy_WriteToClient_ThreadSafe(t *testing.T) {
+	// Verify that writeToClient doesn't panic under concurrent access
+	var output bytes.Buffer
+	warning := &SecurityWarning{
+		PackageName: "acme/test",
+		Score:       50,
+		CertLevel:   1,
+	}
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	proxy := NewMCPProxy(nil, &output, nil, nil, warning, logger)
+
+	// Launch multiple goroutines writing concurrently
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(n int) {
+			defer wg.Done()
+			msg := fmt.Sprintf("message-%d", n)
+			_, _ = proxy.writeToClient([]byte(msg))
+		}(i)
+	}
+	wg.Wait()
+
+	// All messages should be present (though order is not guaranteed)
+	result := output.String()
+	for i := 0; i < 10; i++ {
+		assert.Contains(t, result, fmt.Sprintf("message-%d", i))
+	}
 }

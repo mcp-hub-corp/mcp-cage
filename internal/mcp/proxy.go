@@ -31,8 +31,16 @@ type MCPProxy struct {
 	// serverWriter writes to the MCP server process stdin
 	serverWriter io.Writer
 
+	// stderrReader reads from the MCP server process stderr (optional)
+	stderrReader io.Reader
+	// stderrForward forwards stderr lines to the original stderr writer (optional)
+	stderrForward io.Writer
+
 	warning *SecurityWarning
 	logger  *slog.Logger
+
+	// writeMu protects clientWriter when multiple goroutines inject notifications
+	writeMu sync.Mutex
 
 	// initTimeout is the maximum time to wait for the init handshake
 	initTimeout time.Duration
@@ -75,6 +83,15 @@ func NewMCPProxy(
 // SetInitTimeout sets the timeout for the init handshake phase.
 func (p *MCPProxy) SetInitTimeout(d time.Duration) {
 	p.initTimeout = d
+}
+
+// SetStderr configures the proxy to scan MCP server stderr for sandbox error
+// patterns. When a pattern is detected, a notifications/message is injected
+// on stdout to alert the LLM. The forward writer receives all stderr lines
+// for optional display (e.g., os.Stderr in verbose mode, io.Discard otherwise).
+func (p *MCPProxy) SetStderr(reader io.Reader, forward io.Writer) {
+	p.stderrReader = reader
+	p.stderrForward = forward
 }
 
 // Run starts the proxy. It blocks until the connection closes or an error occurs.
@@ -270,18 +287,32 @@ func (p *MCPProxy) buildNotification() JSONRPCMessage {
 	}
 }
 
+// writeToClient writes data to the LLM client, protected by a mutex.
+// This is needed when multiple goroutines (server→client, stderr→client)
+// may inject notifications concurrently.
+func (p *MCPProxy) writeToClient(data []byte) (int, error) {
+	p.writeMu.Lock()
+	defer p.writeMu.Unlock()
+	return p.clientWriter.Write(data)
+}
+
 // rawCopyWithErrorScanning performs bidirectional copy with sandbox error
-// detection on the server→client direction. When a sandbox error pattern
-// is detected in a JSON-RPC response, a notifications/message is injected
-// after the original message to alert the LLM.
+// detection on both the server→client direction and stderr. When a sandbox
+// error pattern is detected in a JSON-RPC response or stderr line, a
+// notifications/message is injected to alert the LLM.
 //
 // Client→Server: raw io.Copy (no interception needed)
 // Server→Client: line-by-line scanning for sandbox error patterns
+// Stderr→Client: line-by-line scanning for sandbox error patterns (optional)
 func (p *MCPProxy) rawCopyWithErrorScanning(clientBuf, serverBuf *bufio.Reader) error {
 	var wg sync.WaitGroup
-	errCh := make(chan error, 2)
+	goroutines := 2
+	if p.stderrReader != nil {
+		goroutines = 3
+	}
+	errCh := make(chan error, goroutines)
 
-	wg.Add(2)
+	wg.Add(goroutines)
 
 	// Client → Server: raw copy (no interception needed)
 	go func() {
@@ -304,20 +335,76 @@ func (p *MCPProxy) rawCopyWithErrorScanning(clientBuf, serverBuf *bufio.Reader) 
 			}
 
 			// Always forward the original line first
-			if _, writeErr := p.clientWriter.Write(appendNewline(line)); writeErr != nil {
+			if _, writeErr := p.writeToClient(appendNewline(line)); writeErr != nil {
 				errCh <- fmt.Errorf("server→client write: %w", writeErr)
 				return
 			}
 
 			// Detect sandbox errors and inject notification AFTER the error response
 			if notification := p.detectSandboxError(line); notification != nil {
-				if _, writeErr := p.clientWriter.Write(appendNewline(notification)); writeErr != nil {
+				if _, writeErr := p.writeToClient(appendNewline(notification)); writeErr != nil {
 					p.logger.Warn("failed to inject sandbox notification",
 						slog.String("error", writeErr.Error()))
 				}
 			}
 		}
 	}()
+
+	// Stderr → Client: scan for sandbox errors and inject notifications
+	if p.stderrReader != nil {
+		go func() {
+			defer wg.Done()
+			stderrBuf := bufio.NewReader(p.stderrReader)
+			for {
+				line, err := readLine(stderrBuf)
+				if err != nil {
+					if err != io.EOF {
+						p.logger.Debug("stderr read finished", slog.String("error", err.Error()))
+					}
+					return
+				}
+
+				// Forward stderr line to the original writer (e.g., os.Stderr or io.Discard)
+				if p.stderrForward != nil {
+					_, _ = p.stderrForward.Write(appendNewline(line))
+				}
+
+				// Check for sandbox error patterns in stderr
+				lineStr := string(line)
+				found := false
+				for _, pattern := range sandboxErrorPatterns {
+					if strings.Contains(lineStr, pattern) {
+						found = true
+						break
+					}
+				}
+				if !found {
+					continue
+				}
+
+				// Build suggestion from stderr error
+				blockedPath := extractPathFromError(lineStr)
+				var ctx *SandboxContext
+				if p.warning != nil {
+					ctx = p.warning.SandboxContext
+				}
+				suggestion := buildSandboxSuggestion(blockedPath, lineStr, ctx)
+				notification := buildSandboxErrorNotification(suggestion)
+				notifBytes, marshalErr := json.Marshal(notification)
+				if marshalErr != nil {
+					continue
+				}
+
+				p.logger.Debug("sandbox error detected in stderr, injecting notification",
+					slog.String("blocked_path", blockedPath))
+
+				if _, writeErr := p.writeToClient(appendNewline(notifBytes)); writeErr != nil {
+					p.logger.Warn("failed to inject stderr sandbox notification",
+						slog.String("error", writeErr.Error()))
+				}
+			}
+		}()
+	}
 
 	wg.Wait()
 	close(errCh)

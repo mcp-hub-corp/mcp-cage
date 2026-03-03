@@ -177,9 +177,13 @@ func (e *STDIOExecutor) Execute(ctx context.Context, entrypoint *manifest.Entryp
 		if stdoutErr != nil {
 			return fmt.Errorf("creating stdout pipe for proxy: %w", stdoutErr)
 		}
-		cmd.Stderr = e.stderr
+		stderrPipe, stderrErr := cmd.StderrPipe()
+		if stderrErr != nil {
+			return fmt.Errorf("creating stderr pipe for proxy: %w", stderrErr)
+		}
 
 		proxy := mcp.NewMCPProxy(os.Stdin, os.Stdout, stdoutPipe, stdinPipe, e.securityWarning, e.logger)
+		proxy.SetStderr(stderrPipe, e.stderr)
 
 		// Start the proxy after cmd.Start() below — deferred to after Start
 		defer func() {

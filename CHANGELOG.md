@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **2026-03-03**: Auto-enable MCP security proxy in pipe mode for LLM sandbox awareness. When stdin is not a terminal (i.e., called by an LLM client like Claude Code), the security proxy now activates automatically without requiring `--trust`. This ensures LLMs always receive sandbox context in `initialize` response instructions, reactive `notifications/message` alerts for sandbox-blocked operations, and stderr scanning for sandbox error patterns. Also skips interactive low-score confirmation in pipe mode (no terminal to prompt). Added `SetStderr()` to `MCPProxy` with mutex-protected client writes so stderr sandbox errors inject notifications on stdout without races. Executor now pipes stderr through the proxy in proxy mode.
+
 ### Fixed
 
 - **2026-03-03**: Security hardening of sandbox permission system (5 critical + 5 high-priority fixes):

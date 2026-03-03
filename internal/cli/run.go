@@ -24,6 +24,7 @@ import (
 	"github.com/security-mcp/mcp-client/internal/registry"
 	"github.com/security-mcp/mcp-client/internal/sandbox"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // runCmdFlags holds flags for the run command
@@ -616,24 +617,33 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		NoSandbox:   runFlags.noSandbox,
 	})
 
-	// Trust check: warn on low-score packages unless --trust is set
-	if secScore >= 0 && secScore < 80 && !runFlags.trust {
+	// Detect pipe mode: when stdin is not a terminal, we're being called by an
+	// LLM client (e.g., Claude Code). Auto-enable the security proxy so the LLM
+	// gets sandbox context and error notifications without requiring --trust.
+	isPipeMode := !term.IsTerminal(int(os.Stdin.Fd()))
+	if isPipeMode {
+		logger.Debug("pipe mode detected, enabling security proxy automatically")
+	}
+
+	// Trust check: warn on low-score packages unless --trust is set or in pipe mode.
+	// In pipe mode there's no interactive terminal to confirm, so we skip the prompt.
+	if secScore >= 0 && secScore < 80 && !runFlags.trust && !isPipeMode {
 		if !ui.ConfirmLowScore(secScore) {
 			return fmt.Errorf("security score %d/100 is below 80; use --trust to skip this check", secScore)
 		}
 	}
 
 	// Inject security warning and sandbox context into MCP protocol for LLM awareness.
-	// Always activated when --trust is set (used from LLM clients like Claude Code).
+	// Activated when --trust is set OR when pipe mode is detected (LLM clients like Claude Code).
 	// - Score warning: only if score < threshold
 	// - Sandbox context: always (so LLM knows about restrictions and can suggest --allow-* flags)
-	// - Reactive error scanning: always when sandbox is active (detects sandbox blocks in real-time)
+	// - Reactive error scanning: always when sandbox is active (detects sandbox blocks in real-time + stderr)
 	warningThreshold := cfg.Policy.WarningThreshold
 	if runFlags.warningThreshold != 80 {
 		// CLI flag overrides config
 		warningThreshold = runFlags.warningThreshold
 	}
-	if runFlags.trust {
+	if runFlags.trust || isPipeMode {
 		sandboxCtx := &mcp.SandboxContext{
 			Platform:       runtime.GOOS,
 			ReadPaths:      mf.Permissions.FileSystemRead,
