@@ -38,6 +38,25 @@ type InitializeResult struct {
 	Instructions    string          `json:"instructions,omitempty"`
 }
 
+// Content represents a content item in an MCP tool result.
+type Content struct {
+	Type string `json:"type"`
+	Text string `json:"text,omitempty"`
+}
+
+// CallToolResult represents the result of a tool execution.
+type CallToolResult struct {
+	Content []Content `json:"content"`
+	IsError bool      `json:"isError,omitempty"`
+}
+
+// JSONRPCError represents a JSON-RPC error object.
+type JSONRPCError struct {
+	Code    int             `json:"code"`
+	Message string          `json:"message"`
+	Data    json.RawMessage `json:"data,omitempty"`
+}
+
 // NotificationParams represents the params for a notifications/message notification.
 type NotificationParams struct {
 	Level  string `json:"level"`

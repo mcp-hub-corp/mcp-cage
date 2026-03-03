@@ -124,6 +124,7 @@ func (w *SecurityWarning) GenerateInstructionsWarning() string {
 		b.WriteString("- The server name and its security score\n")
 		b.WriteString("- That it has potential security vulnerabilities\n")
 		b.WriteString("- That they should exercise caution with sensitive operations\n")
+		b.WriteString("- Ask the user for explicit confirmation to proceed\n")
 		b.WriteString("This assessment was performed by MCP Hub (https://mcp-hub.info).\n")
 		b.WriteString("[END SECURITY WARNING]")
 	}
