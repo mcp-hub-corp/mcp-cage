@@ -420,7 +420,8 @@ func buildSandboxErrorNotification(suggestion string) JSONRPCMessage {
 	data.WriteString("You MUST inform the user that:\n")
 	data.WriteString("1. SMCP blocked this operation to protect their system\n")
 	data.WriteString("2. They can grant access by adding the appropriate flag to the smcp command\n")
-	data.WriteString("3. Available flags: --allow-read <path>, --allow-write <path>, --allow-net <domain>, --allow-subprocess\n")
+	data.WriteString("3. Available flags: --allow-read <path>, --allow-write <path>, --allow-fs (all files), ")
+	data.WriteString("--allow-net <domain>, --allow-all-net, --allow-subprocess, --allow-all (everything)\n")
 
 	params := NotificationParams{
 		Level:  "warning",

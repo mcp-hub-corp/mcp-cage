@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **2026-03-03**: Blanket permission flags: `--allow-fs` (full filesystem), `--allow-all-net` (all network), `--allow-all-env` (all env vars), `--allow-all` (everything at once). These complement the granular `--allow-read`/`--allow-write`/`--allow-net`/`--allow-env` flags.
+
 - **2026-03-03**: Sandbox permission CLI flags and LLM notification system. Added `--allow-read`, `--allow-write`, `--allow-net`, `--allow-subprocess`, `--allow-env` flags to `smcp run` for granting specific sandbox permissions. Added proactive `[SANDBOX CONTEXT]` section in MCP handshake so the LLM knows about sandbox restrictions upfront. Added reactive sandbox error interception — when the sandbox blocks an operation, the proxy detects the error pattern in real-time and injects a `notifications/message` to the LLM explaining what happened and which `--allow-*` flag to suggest. Added `FileSystemRead` field to `PermissionsInfo` for read-only filesystem paths. Added read-only path support in macOS SBPL profiles (`file-read*` only). Proxy now always activates with `--trust` (not just for low-score packages) to enable sandbox context and error scanning for all packages.
 
 ### Fixed
