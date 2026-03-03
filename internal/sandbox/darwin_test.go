@@ -312,6 +312,59 @@ func TestGenerateSBPLProfile_ReadOnlyPaths(t *testing.T) {
 	})
 }
 
+func TestGenerateSBPLProfile_BlanketFlags(t *testing.T) {
+	workDir := t.TempDir()
+
+	t.Run("AllFS grants full filesystem access", func(t *testing.T) {
+		perms := &manifest.PermissionsInfo{
+			AllFS: true,
+		}
+
+		profilePath, err := generateSBPLProfile("/usr/bin/true", perms, workDir)
+		require.NoError(t, err)
+		defer os.Remove(profilePath)
+
+		content, err := os.ReadFile(profilePath)
+		require.NoError(t, err)
+
+		profile := string(content)
+		assert.Contains(t, profile, "FULL FILESYSTEM ACCESS")
+		assert.Contains(t, profile, "(allow file-read* file-write*)")
+	})
+
+	t.Run("AllNet grants full network access", func(t *testing.T) {
+		perms := &manifest.PermissionsInfo{
+			AllNet: true,
+		}
+
+		profilePath, err := generateSBPLProfile("/usr/bin/true", perms, workDir)
+		require.NoError(t, err)
+		defer os.Remove(profilePath)
+
+		content, err := os.ReadFile(profilePath)
+		require.NoError(t, err)
+
+		profile := string(content)
+		assert.Contains(t, profile, "(allow network*)")
+		assert.NotContains(t, profile, "(deny network*)")
+	})
+
+	t.Run("no blanket flags keeps deny-default", func(t *testing.T) {
+		perms := &manifest.PermissionsInfo{}
+
+		profilePath, err := generateSBPLProfile("/usr/bin/true", perms, workDir)
+		require.NoError(t, err)
+		defer os.Remove(profilePath)
+
+		content, err := os.ReadFile(profilePath)
+		require.NoError(t, err)
+
+		profile := string(content)
+		assert.Contains(t, profile, "(deny network*)")
+		assert.NotContains(t, profile, "FULL FILESYSTEM ACCESS")
+	})
+}
+
 func TestEscapeSBPLPath(t *testing.T) {
 	// Basic path should pass through
 	assert.Equal(t, "/usr/bin/test", escapeSBPLPath("/usr/bin/test"))

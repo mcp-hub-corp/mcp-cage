@@ -135,7 +135,10 @@ func (s *LinuxSandbox) Apply(cmd *exec.Cmd, limits *policy.ExecutionLimits, perm
 	s.applyRLimits(limits)
 
 	// OPTIONAL: Try mount namespace (best-effort)
-	if s.canCreateMount {
+	// Skip mount namespace when --allow-fs (AllFS) grants full filesystem access
+	if perms != nil && perms.AllFS {
+		s.logger.Debug("mount namespace skipped (--allow-fs grants full filesystem access)")
+	} else if s.canCreateMount {
 		s.setupMountNamespace(cmd)
 	}
 
@@ -147,7 +150,10 @@ func (s *LinuxSandbox) Apply(cmd *exec.Cmd, limits *policy.ExecutionLimits, perm
 	}
 
 	// OPTIONAL: Try network namespace if available (best-effort, documented if fails)
-	if s.canCreateNet {
+	// Skip network isolation when --allow-all-net (AllNet) grants full network access
+	if perms != nil && perms.AllNet {
+		s.logger.Debug("network namespace skipped (--allow-all-net grants full network access)")
+	} else if s.canCreateNet {
 		if err := s.setupNetworkNamespace(cmd); err != nil {
 			s.logger.Warn("network namespace setup failed", slog.String("error", err.Error()))
 		} else {

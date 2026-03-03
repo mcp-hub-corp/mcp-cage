@@ -278,3 +278,89 @@ func TestGenerateInstructionsWarning_BothScoreAndSandbox(t *testing.T) {
 	assert.Contains(t, text, "[SANDBOX CONTEXT")
 	assert.Contains(t, text, "Subprocess: ALLOWED")
 }
+
+func TestGenerateInstructionsWarning_BlanketFlags(t *testing.T) {
+	t.Run("AllFS shows full filesystem access", func(t *testing.T) {
+		w := &SecurityWarning{
+			PackageName:          "acme/test",
+			Score:                90,
+			CertLevel:            2,
+			ScoreWarningDisabled: true,
+			SandboxContext: &SandboxContext{
+				Platform: "darwin",
+				AllFS:    true,
+			},
+		}
+		text := w.GenerateInstructionsWarning()
+		assert.Contains(t, text, "FULL ACCESS (--allow-fs)")
+		assert.NotContains(t, text, "bundle directory and system paths only")
+	})
+
+	t.Run("AllNet shows full network access", func(t *testing.T) {
+		w := &SecurityWarning{
+			PackageName:          "acme/test",
+			Score:                90,
+			CertLevel:            2,
+			ScoreWarningDisabled: true,
+			SandboxContext: &SandboxContext{
+				Platform: "linux",
+				AllNet:   true,
+			},
+		}
+		text := w.GenerateInstructionsWarning()
+		assert.Contains(t, text, "FULL ACCESS (--allow-all-net)")
+		assert.NotContains(t, text, "Network Access: DENIED")
+	})
+
+	t.Run("AllEnv shows full env access", func(t *testing.T) {
+		w := &SecurityWarning{
+			PackageName:          "acme/test",
+			Score:                90,
+			CertLevel:            2,
+			ScoreWarningDisabled: true,
+			SandboxContext: &SandboxContext{
+				Platform: "darwin",
+				AllEnv:   true,
+			},
+		}
+		text := w.GenerateInstructionsWarning()
+		assert.Contains(t, text, "FULL ACCESS (--allow-all-env)")
+	})
+
+	t.Run("CLI overrides show blanket flags", func(t *testing.T) {
+		w := &SecurityWarning{
+			PackageName:          "acme/test",
+			Score:                90,
+			CertLevel:            2,
+			ScoreWarningDisabled: true,
+			SandboxContext: &SandboxContext{
+				Platform: "darwin",
+				AllFS:    true,
+				AllNet:   true,
+				CLIOverrides: &PermissionOverrides{
+					AllFS: true,
+					AllNet: true,
+				},
+			},
+		}
+		text := w.GenerateInstructionsWarning()
+		assert.Contains(t, text, "--allow-fs")
+		assert.Contains(t, text, "--allow-all-net")
+	})
+
+	t.Run("suggestion text mentions blanket flags", func(t *testing.T) {
+		w := &SecurityWarning{
+			PackageName:          "acme/test",
+			Score:                90,
+			CertLevel:            2,
+			ScoreWarningDisabled: true,
+			SandboxContext: &SandboxContext{
+				Platform: "darwin",
+			},
+		}
+		text := w.GenerateInstructionsWarning()
+		assert.Contains(t, text, "--allow-fs for all")
+		assert.Contains(t, text, "--allow-all-net for all")
+		assert.Contains(t, text, "--allow-all")
+	})
+}

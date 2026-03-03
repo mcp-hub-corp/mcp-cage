@@ -208,6 +208,13 @@ func (p *Policy) ValidateEnv(env map[string]string) map[string]string {
 		return env
 	}
 
+	// Wildcard: allow all env vars
+	for _, key := range p.EnvAllowlist {
+		if key == "*" {
+			return env
+		}
+	}
+
 	filtered := make(map[string]string)
 	for _, key := range p.EnvAllowlist {
 		if val, ok := env[key]; ok {
@@ -228,6 +235,11 @@ func (p *Policy) ValidateNetwork(host string) bool {
 	host = strings.ToLower(host)
 	for _, allowed := range p.NetworkAllowlist {
 		allowed = strings.ToLower(allowed)
+
+		// Wildcard: allow all hosts
+		if allowed == "*" {
+			return true
+		}
 
 		// Exact match
 		if host == allowed {

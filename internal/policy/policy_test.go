@@ -246,6 +246,48 @@ func TestValidateNetwork_WildcardMatch(t *testing.T) {
 	assert.False(t, p.ValidateNetwork("other.com"))
 }
 
+func TestValidateEnv_WildcardAllowsAll(t *testing.T) {
+	cfg := &config.Config{Timeout: 5 * time.Minute}
+	p := NewPolicy(cfg)
+	p.EnvAllowlist = []string{"*"}
+
+	env := map[string]string{
+		"VAR1":   "value1",
+		"SECRET": "s3cret",
+		"PATH":   "/usr/bin",
+	}
+
+	result := p.ValidateEnv(env)
+	assert.Equal(t, 3, len(result))
+	assert.Equal(t, "value1", result["VAR1"])
+	assert.Equal(t, "s3cret", result["SECRET"])
+	assert.Equal(t, "/usr/bin", result["PATH"])
+}
+
+func TestValidateEnv_WildcardMixedWithOthers(t *testing.T) {
+	cfg := &config.Config{Timeout: 5 * time.Minute}
+	p := NewPolicy(cfg)
+	p.EnvAllowlist = []string{"VAR1", "*"}
+
+	env := map[string]string{
+		"VAR1": "value1",
+		"VAR2": "value2",
+	}
+
+	result := p.ValidateEnv(env)
+	assert.Equal(t, 2, len(result))
+}
+
+func TestValidateNetwork_WildcardAllowsAll(t *testing.T) {
+	cfg := &config.Config{Timeout: 5 * time.Minute}
+	p := NewPolicy(cfg)
+	p.NetworkAllowlist = []string{"*"}
+
+	assert.True(t, p.ValidateNetwork("example.com"))
+	assert.True(t, p.ValidateNetwork("anything.io"))
+	assert.True(t, p.ValidateNetwork("192.168.1.1"))
+}
+
 func TestValidateNetwork_CaseInsensitive(t *testing.T) {
 	cfg := &config.Config{Timeout: 5 * time.Minute}
 	p := NewPolicy(cfg)
