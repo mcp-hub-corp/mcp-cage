@@ -58,6 +58,9 @@ type PermissionsInfo struct {
 	Subprocess     bool     `json:"subprocess"`                // allow subprocess creation
 	FileSystem     []string `json:"filesystem,omitempty"`      // read+write filesystem paths
 	FileSystemRead []string `json:"filesystem_read,omitempty"` // read-only filesystem paths
+	AllFS          bool     `json:"-"`                         // blanket: full filesystem access
+	AllNet         bool     `json:"-"`                         // blanket: full network access
+	AllEnv         bool     `json:"-"`                         // blanket: full env access
 }
 
 // LimitsInfo contains recommended resource limits

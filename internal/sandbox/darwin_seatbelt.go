@@ -90,13 +90,16 @@ func generateSBPLProfile(commandPath string, perms *manifest.PermissionsInfo, wo
 	sb.WriteString("(allow mach-lookup (global-name \"com.apple.system.logger\"))\n")
 	sb.WriteString("(allow mach-lookup (global-name \"com.apple.system.notification_center\"))\n\n")
 
+	// Blanket filesystem access: allow all paths
+	if perms != nil && perms.AllFS {
+		sb.WriteString("\n; FULL FILESYSTEM ACCESS (--allow-fs)\n")
+		sb.WriteString("(allow file-read* file-write*)\n")
+	}
+
 	// Network rules based on permissions
-	if perms != nil && len(perms.Network) > 0 {
-		sb.WriteString("; Network access (allowed by manifest)\n")
+	if perms != nil && (perms.AllNet || len(perms.Network) > 0) {
+		sb.WriteString("; Network access (allowed by manifest/CLI)\n")
 		sb.WriteString("(allow network*)\n")
-		// sandbox-exec doesn't support per-host filtering in SBPL,
-		// so we allow all network if any hosts are listed.
-		// The policy layer handles per-host enforcement separately.
 	} else {
 		sb.WriteString("; Network denied (no manifest network permissions)\n")
 		sb.WriteString("(deny network*)\n")

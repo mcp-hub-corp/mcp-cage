@@ -40,6 +40,10 @@ type runCmdFlags struct {
 	allowNet         []string // --allow-net domains
 	allowSubprocess  bool     // --allow-subprocess
 	allowEnv         []string // --allow-env variables
+	allowFS          bool     // --allow-fs (full filesystem read+write)
+	allowAllNet      bool     // --allow-all-net (full network access)
+	allowAllEnv      bool     // --allow-all-env (full env access)
+	allowAll         bool     // --allow-all (everything)
 }
 
 var runFlags runCmdFlags
@@ -57,6 +61,10 @@ func init() {
 	runCmd.Flags().StringArrayVar(&runFlags.allowNet, "allow-net", nil, "Grant network access to a domain (can be repeated)")
 	runCmd.Flags().BoolVar(&runFlags.allowSubprocess, "allow-subprocess", false, "Grant subprocess creation permission")
 	runCmd.Flags().StringArrayVar(&runFlags.allowEnv, "allow-env", nil, "Grant access to an environment variable (can be repeated)")
+	runCmd.Flags().BoolVar(&runFlags.allowFS, "allow-fs", false, "Grant full filesystem read+write access (no path restrictions)")
+	runCmd.Flags().BoolVar(&runFlags.allowAllNet, "allow-all-net", false, "Grant full network access (all domains)")
+	runCmd.Flags().BoolVar(&runFlags.allowAllEnv, "allow-all-env", false, "Grant full environment variable access")
+	runCmd.Flags().BoolVar(&runFlags.allowAll, "allow-all", false, "Grant all permissions (filesystem, network, subprocess, env)")
 }
 
 // runMCPServer executes an MCP server from a package reference
@@ -271,10 +279,19 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("policy application failed: %w", permErr)
 	}
 
+	// Expand --allow-all into individual blanket flags
+	if runFlags.allowAll {
+		runFlags.allowFS = true
+		runFlags.allowAllNet = true
+		runFlags.allowAllEnv = true
+		runFlags.allowSubprocess = true
+	}
+
 	// Merge CLI permission flags into manifest permissions (additive)
 	var cliOverrides *mcp.PermissionOverrides
 	hasCLIPerms := len(runFlags.allowRead) > 0 || len(runFlags.allowWrite) > 0 ||
-		len(runFlags.allowNet) > 0 || runFlags.allowSubprocess || len(runFlags.allowEnv) > 0
+		len(runFlags.allowNet) > 0 || runFlags.allowSubprocess || len(runFlags.allowEnv) > 0 ||
+		runFlags.allowFS || runFlags.allowAllNet || runFlags.allowAllEnv
 
 	if hasCLIPerms {
 		cliOverrides = &mcp.PermissionOverrides{
@@ -283,6 +300,9 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 			Networks:   runFlags.allowNet,
 			Subprocess: runFlags.allowSubprocess,
 			EnvVars:    runFlags.allowEnv,
+			AllFS:      runFlags.allowFS,
+			AllNet:     runFlags.allowAllNet,
+			AllEnv:     runFlags.allowAllEnv,
 		}
 	}
 
@@ -308,6 +328,19 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 	if len(runFlags.allowEnv) > 0 {
 		mf.Permissions.Environment = append(mf.Permissions.Environment, runFlags.allowEnv...)
 		pol.EnvAllowlist = append(pol.EnvAllowlist, runFlags.allowEnv...)
+	}
+	// Blanket permission flags
+	if runFlags.allowFS {
+		mf.Permissions.AllFS = true
+	}
+	if runFlags.allowAllNet {
+		mf.Permissions.AllNet = true
+		mf.Permissions.Network = append(mf.Permissions.Network, "*")
+		pol.NetworkAllowlist = append(pol.NetworkAllowlist, "*")
+	}
+	if runFlags.allowAllEnv {
+		mf.Permissions.AllEnv = true
+		pol.EnvAllowlist = append(pol.EnvAllowlist, "*")
 	}
 
 	// Select entrypoint
@@ -595,6 +628,9 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 			AllowedEnvVars: mf.Permissions.Environment,
 			NoSandbox:      runFlags.noSandbox,
 			CLIOverrides:   cliOverrides,
+			AllFS:          runFlags.allowFS,
+			AllNet:         runFlags.allowAllNet,
+			AllEnv:         runFlags.allowAllEnv,
 		}
 
 		warning := &mcp.SecurityWarning{

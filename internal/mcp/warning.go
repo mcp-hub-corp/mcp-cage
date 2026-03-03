@@ -18,6 +18,9 @@ type SandboxContext struct {
 	AllowedEnvVars []string             // allowed env vars
 	NoSandbox      bool                 // sandbox disabled entirely
 	CLIOverrides   *PermissionOverrides // tracks what was granted via CLI flags
+	AllFS          bool                 // --allow-fs: full filesystem access
+	AllNet         bool                 // --allow-all-net: full network access
+	AllEnv         bool                 // --allow-all-env: full env access
 }
 
 // PermissionOverrides tracks which permissions were explicitly granted via CLI flags.
@@ -27,6 +30,9 @@ type PermissionOverrides struct {
 	Networks   []string
 	Subprocess bool
 	EnvVars    []string
+	AllFS      bool // --allow-fs blanket flag
+	AllNet     bool // --allow-all-net blanket flag
+	AllEnv     bool // --allow-all-env blanket flag
 }
 
 // SecurityWarning holds the data needed to generate security warnings
@@ -151,18 +157,24 @@ func (w *SecurityWarning) generateSandboxContextWarning() string {
 
 	// Filesystem access
 	b.WriteString("Filesystem Access:\n")
-	if len(ctx.WritePaths) > 0 {
-		fmt.Fprintf(&b, "  Read+Write: %s\n", strings.Join(ctx.WritePaths, ", "))
-	}
-	if len(ctx.ReadPaths) > 0 {
-		fmt.Fprintf(&b, "  Read-Only: %s\n", strings.Join(ctx.ReadPaths, ", "))
-	}
-	if len(ctx.WritePaths) == 0 && len(ctx.ReadPaths) == 0 {
-		b.WriteString("  No additional paths (bundle directory and system paths only)\n")
+	if ctx.AllFS {
+		b.WriteString("  FULL ACCESS (--allow-fs): all paths readable and writable\n")
+	} else {
+		if len(ctx.WritePaths) > 0 {
+			fmt.Fprintf(&b, "  Read+Write: %s\n", strings.Join(ctx.WritePaths, ", "))
+		}
+		if len(ctx.ReadPaths) > 0 {
+			fmt.Fprintf(&b, "  Read-Only: %s\n", strings.Join(ctx.ReadPaths, ", "))
+		}
+		if len(ctx.WritePaths) == 0 && len(ctx.ReadPaths) == 0 {
+			b.WriteString("  No additional paths (bundle directory and system paths only)\n")
+		}
 	}
 
 	// Network access
-	if len(ctx.NetworkDomains) > 0 {
+	if ctx.AllNet {
+		b.WriteString("Network Access: FULL ACCESS (--allow-all-net)\n")
+	} else if len(ctx.NetworkDomains) > 0 {
 		fmt.Fprintf(&b, "Network Access: ALLOWED (%s)\n", strings.Join(ctx.NetworkDomains, ", "))
 	} else {
 		b.WriteString("Network Access: DENIED (no domains allowed)\n")
@@ -175,9 +187,23 @@ func (w *SecurityWarning) generateSandboxContextWarning() string {
 		b.WriteString("Subprocess: DENIED\n")
 	}
 
+	// Environment access
+	if ctx.AllEnv {
+		b.WriteString("Environment Variables: FULL ACCESS (--allow-all-env)\n")
+	}
+
 	// CLI overrides
 	if ctx.CLIOverrides != nil {
 		overrides := []string{}
+		if ctx.CLIOverrides.AllFS {
+			overrides = append(overrides, "--allow-fs")
+		}
+		if ctx.CLIOverrides.AllNet {
+			overrides = append(overrides, "--allow-all-net")
+		}
+		if ctx.CLIOverrides.AllEnv {
+			overrides = append(overrides, "--allow-all-env")
+		}
 		for _, p := range ctx.CLIOverrides.ReadPaths {
 			overrides = append(overrides, "--allow-read "+p)
 		}
@@ -206,9 +232,11 @@ func (w *SecurityWarning) generateSandboxContextWarning() string {
 	b.WriteString("You MUST tell the user:\n")
 	b.WriteString("1. SMCP blocked the operation to protect them\n")
 	b.WriteString("2. Which specific CLI flag to use to grant access:\n")
-	b.WriteString("   - File access: --allow-read <path> or --allow-write <path>\n")
-	b.WriteString("   - Network: --allow-net <domain>\n")
+	b.WriteString("   - File access: --allow-read <path> or --allow-write <path> (or --allow-fs for all)\n")
+	b.WriteString("   - Network: --allow-net <domain> (or --allow-all-net for all)\n")
 	b.WriteString("   - Subprocess: --allow-subprocess\n")
+	b.WriteString("   - Environment: --allow-env <var> (or --allow-all-env for all)\n")
+	b.WriteString("   - Everything: --allow-all\n")
 	b.WriteString("[END SANDBOX CONTEXT]")
 
 	return b.String()
