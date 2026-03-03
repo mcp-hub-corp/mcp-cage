@@ -5,9 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.1] - 2026-03-03
 
 ### Added
+
+- **2026-03-03**: Inject sandbox error warnings directly into MCP tool results. Instead of only sending a separate `notifications/message`, the proxy now detects sandbox-blocked operations in JSON-RPC tool results (`CallToolResult` and `JSONRPCError`) and appends an `[SMCP SANDBOX ALERT]` content block inline. This ensures LLMs see the security context as part of the tool output, even if they ignore notifications.
+
+- **2026-03-03**: Improved CLI help text with usage examples and updated description (`smcp` → "Secure MCP Client").
+
+- **2026-03-03**: Enhanced security warning instructions — LLM now asked to request explicit user confirmation before proceeding with low-score packages.
+
+- **2026-03-03**: Improved sandbox suggestion messages — restructured as structured security alerts with Action/Status/Reason/Impact fields. LLM is now instructed to NOT suggest bypassing security unless the user explicitly requests it.
 
 - **2026-03-03**: Auto-enable MCP security proxy in pipe mode for LLM sandbox awareness. When stdin is not a terminal (i.e., called by an LLM client like Claude Code), the security proxy now activates automatically without requiring `--trust`. This ensures LLMs always receive sandbox context in `initialize` response instructions, reactive `notifications/message` alerts for sandbox-blocked operations, and stderr scanning for sandbox error patterns. Also skips interactive low-score confirmation in pipe mode (no terminal to prompt). Added `SetStderr()` to `MCPProxy` with mutex-protected client writes so stderr sandbox errors inject notifications on stdout without races. Executor now pipes stderr through the proxy in proxy mode.
 

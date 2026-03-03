@@ -26,9 +26,19 @@ var (
 // rootCmd represents the base command
 var rootCmd = &cobra.Command{
 	Use:   "smcp",
-	Short: "MCP Client - Launcher for MCP servers",
-	Long: `mcp is a CLI tool for executing MCP (Model Context Protocol) servers.
-It downloads, validates, and executes MCP packages from a compatible registry.`,
+	Short: "Secure MCP Client - Launcher for MCP servers",
+	Long: `smcp is a secure CLI tool for executing MCP (Model Context Protocol) servers.
+
+It downloads, validates, executes and sandbox MCP packages from a MCP Hub registry - https://mcp-hub.info.
+
+Examples:
+  smcp run acme/hello-world@1.2.3
+  smcp pull acme/hello-world@1.2.3
+  smcp info acme/hello-world@1.2.3
+  smcp cache ls
+  smcp cache rm
+  smcp doctor
+`,
 	Version: Version,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Load configuration

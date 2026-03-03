@@ -360,18 +360,31 @@ func (p *MCPProxy) rawCopyWithErrorScanning(clientBuf, serverBuf *bufio.Reader) 
 				return
 			}
 
-			// Always forward the original line first
-			if _, writeErr := p.writeToClient(appendNewline(line)); writeErr != nil {
+			// Detect and inject sandbox errors directly into the response result
+			modifiedLine := p.injectSandboxErrorInResult(line)
+			lineToWrite := line
+			injected := false
+
+			if modifiedLine != nil {
+				lineToWrite = modifiedLine
+				injected = true
+				p.logger.Debug("injected sandbox warning into tool result")
+			}
+
+			if _, writeErr := p.writeToClient(appendNewline(lineToWrite)); writeErr != nil {
 				errCh <- fmt.Errorf("server→client write: %w", writeErr)
 				p.closeServerWriter()
 				return
 			}
 
-			// Detect sandbox errors and inject notification AFTER the error response
-			if notification := p.detectSandboxError(line); notification != nil {
-				if _, writeErr := p.writeToClient(appendNewline(notification)); writeErr != nil {
-					p.logger.Warn("failed to inject sandbox notification",
-						slog.String("error", writeErr.Error()))
+			// If we successfully injected the warning into the result, we don't need
+			// to send a separate notification. Otherwise, fall back to notification.
+			if !injected {
+				if notification := p.detectSandboxError(line); notification != nil {
+					if _, writeErr := p.writeToClient(appendNewline(notification)); writeErr != nil {
+						p.logger.Warn("failed to inject sandbox notification",
+							slog.String("error", writeErr.Error()))
+					}
 				}
 			}
 		}
@@ -459,6 +472,106 @@ func (p *MCPProxy) processStderr() {
 	}
 }
 
+// injectSandboxErrorInResult checks if a JSON-RPC message is a tool result
+// containing a sandbox error, and if so, injects the security warning directly
+// into the result content. This ensures the LLM sees the warning as part of
+// the tool execution output.
+func (p *MCPProxy) injectSandboxErrorInResult(line []byte) []byte {
+	// Fast pre-check: any sandbox error pattern present?
+	lineStr := string(line)
+	found := false
+	for _, pattern := range sandboxErrorPatterns {
+		if strings.Contains(lineStr, pattern) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil
+	}
+
+	var msg JSONRPCMessage
+	if err := json.Unmarshal(line, &msg); err != nil {
+		return nil
+	}
+
+	// We only care about responses (tool results) or errors
+	if !msg.IsResponse() {
+		return nil
+	}
+
+	// Try to modify Result (successful tool execution that returned an error text)
+	if len(msg.Result) > 0 {
+		var res CallToolResult
+		if err := json.Unmarshal(msg.Result, &res); err == nil && len(res.Content) > 0 {
+			// Check if any content contains the error
+			modified := false
+			for _, content := range res.Content {
+				if content.Type == "text" {
+					for _, pattern := range sandboxErrorPatterns {
+						if strings.Contains(content.Text, pattern) {
+							// Found sandbox error in content text
+							blockedPath := extractPathFromError(content.Text)
+							var ctx *SandboxContext
+							if p.warning != nil {
+								ctx = p.warning.SandboxContext
+							}
+							suggestion := buildSandboxSuggestion(blockedPath, content.Text, ctx)
+
+							warningText := fmt.Sprintf("\n\n[SMCP SANDBOX ALERT]\n%s\n\nINSTRUCTION TO LLM: Inform the user that this action was blocked for their safety.", suggestion)
+
+							// Append a new content item with the warning
+							newContent := Content{
+								Type: "text",
+								Text: warningText,
+							}
+							res.Content = append(res.Content, newContent)
+							res.IsError = true // Ensure it's marked as error
+							modified = true
+							goto ResultModified
+						}
+					}
+				}
+			}
+
+		ResultModified:
+			if modified {
+				newResult, _ := json.Marshal(res)
+				msg.Result = newResult
+				newLine, _ := json.Marshal(msg)
+				return newLine
+			}
+		}
+	}
+
+	// Try to modify Error (JSON-RPC error response)
+	if len(msg.Error) > 0 {
+		var errObj JSONRPCError
+		if err := json.Unmarshal(msg.Error, &errObj); err == nil {
+			// Check message
+			for _, pattern := range sandboxErrorPatterns {
+				if strings.Contains(errObj.Message, pattern) {
+					// Modify message
+					blockedPath := extractPathFromError(errObj.Message)
+					var ctx *SandboxContext
+					if p.warning != nil {
+						ctx = p.warning.SandboxContext
+					}
+					suggestion := buildSandboxSuggestion(blockedPath, errObj.Message, ctx)
+					errObj.Message += fmt.Sprintf("\n\n[SMCP SANDBOX ALERT] %s", suggestion)
+
+					newError, _ := json.Marshal(errObj)
+					msg.Error = newError
+					newLine, _ := json.Marshal(msg)
+					return newLine
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 // detectSandboxError checks if a line contains a sandbox error pattern.
 // Uses a fast string pre-check to avoid JSON parsing on every message.
 // Returns the notification bytes to inject, or nil if no sandbox error detected.
@@ -530,49 +643,62 @@ func extractPathFromError(errText string) string {
 
 // buildSandboxSuggestion builds a human-readable suggestion based on
 // the blocked path, error context, and current sandbox permissions.
-// When blanket flags are already active, it avoids suggesting them again
-// and provides more accurate diagnostics.
+// The focus is on informing the user about the blocked action and security implications.
 func buildSandboxSuggestion(blockedPath, errText string, ctx *SandboxContext) string {
+	var sb strings.Builder
+
+	sb.WriteString("SECURITY ALERT: The MCP server attempted a restricted operation.\n")
+
 	if blockedPath != "" {
-		// If AllFS is already active, the error is likely from a different restriction
 		if ctx != nil && ctx.AllFS {
-			return fmt.Sprintf("The MCP server tried to access '%s'. Filesystem access is already "+
-				"fully granted (--allow-fs). This error may be caused by another restriction "+
-				"(e.g., network, subprocess, or OS-level protection).", blockedPath)
+			fmt.Fprintf(&sb, "Action: Access file '%s'.\n", blockedPath)
+			sb.WriteString("Status: BLOCKED (despite --allow-fs). This may be due to OS-level protections.\n")
+		} else {
+			fmt.Fprintf(&sb, "Action: Write/Modify file '%s'.\n", blockedPath)
+			sb.WriteString("Status: BLOCKED by sandbox.\n")
+			sb.WriteString("Reason: The server does not have write permission for this path.\n")
+			sb.WriteString("Impact: Prevents unauthorized file modification or data exfiltration.\n")
+			
+			fmt.Fprintf(&sb, "\nIf you explicitly trust this server and want to allow this specific access, you can restart with:\n")
+			fmt.Fprintf(&sb, "  --allow-write %s\n", blockedPath)
 		}
-		return fmt.Sprintf("The MCP server tried to access '%s' which is outside the sandbox.\n"+
-			"Suggested fix: add --allow-write %s to the smcp run command "+
-			"(or --allow-fs for full filesystem access).", blockedPath, blockedPath)
-	}
-	if strings.Contains(errText, "network") || strings.Contains(errText, "connect") {
+	} else if strings.Contains(errText, "network") || strings.Contains(errText, "connect") {
+		sb.WriteString("Action: Network connection.\n")
 		if ctx != nil && ctx.AllNet {
-			return "The MCP server encountered a network error. Network access is already " +
-				"fully granted (--allow-all-net). This may be a connectivity issue rather than a sandbox restriction."
+			sb.WriteString("Status: FAILED (network is allowed via --allow-all-net). Likely a connectivity issue.\n")
+		} else {
+			sb.WriteString("Status: BLOCKED by sandbox.\n")
+			sb.WriteString("Reason: Network access is disabled by default.\n")
+			sb.WriteString("Impact: Prevents unauthorized data transmission.\n")
+			
+			sb.WriteString("\nIf you explicitly trust this server and want to allow network access, you can restart with:\n")
+			sb.WriteString("  --allow-net <domain> (for specific domains)\n")
+			sb.WriteString("  --allow-all-net (for all network access)\n")
 		}
-		return "The MCP server tried to make a network connection which is blocked.\n" +
-			"Suggested fix: add --allow-net <domain> to the smcp run command " +
-			"(or --allow-all-net for all domains)."
+	} else {
+		sb.WriteString("Action: Unknown restricted operation.\n")
+		sb.WriteString("Status: BLOCKED by sandbox.\n")
 	}
-	return "The MCP server tried to access a restricted resource."
+
+	return sb.String()
 }
 
 // buildSandboxErrorNotification creates a JSON-RPC notifications/message
 // that alerts the LLM about a sandbox-blocked operation.
 func buildSandboxErrorNotification(suggestion string) JSONRPCMessage {
 	var data strings.Builder
-	data.WriteString("[SMCP SANDBOX ALERT] The previous error was caused by SMCP's security sandbox ")
-	data.WriteString("blocking a restricted operation to protect the user's system.\n\n")
+	data.WriteString("[SMCP SANDBOX ALERT] A restricted operation was blocked to protect the system.\n\n")
 
 	if suggestion != "" {
 		data.WriteString(suggestion)
 		data.WriteString("\n\n")
 	}
 
-	data.WriteString("You MUST inform the user that:\n")
-	data.WriteString("1. SMCP blocked this operation to protect their system\n")
-	data.WriteString("2. They can grant access by adding the appropriate flag to the smcp command\n")
-	data.WriteString("3. Available flags: --allow-read <path>, --allow-write <path>, --allow-fs (all files), ")
-	data.WriteString("--allow-net <domain>, --allow-all-net, --allow-subprocess, --allow-all (everything)\n")
+	data.WriteString("INSTRUCTION TO LLM: You MUST inform the user about this security event.\n")
+	data.WriteString("1. Explain clearly WHAT was blocked (e.g. \"The server tried to modify file X\")\n")
+	data.WriteString("2. Explain that SMCP blocked it for their protection.\n")
+	data.WriteString("3. ONLY if the user asks how to fix it, provide the flags mentions above.\n")
+	data.WriteString("4. Do NOT suggest bypassing security unless the user explicitly requests it.\n")
 
 	params := NotificationParams{
 		Level:  "warning",
