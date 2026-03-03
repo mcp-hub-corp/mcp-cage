@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **2026-03-03**: Stderr pipe deadlock in MCP proxy causing 60s timeout on Claude Desktop. The `processStderr()` goroutine was started only after the handshake completed, but MCP servers write startup logs to stderr *during* the handshake. If the OS pipe buffer (~64KB) filled, the server blocked on stderr write and never sent the initialize response. Fix: start stderr processing immediately in `Run()` before the handshake. Also fixed a data race in `handleHandshake()` which wrote to `clientWriter` without the mutex (now uses `writeToClient()`).
+
 - **2026-03-03**: Security hardening of sandbox permission system (5 critical + 5 high-priority fixes):
   - **CRITICAL: Environment variable leak** — `buildEnv()` in executor inherited full `os.Environ()`, bypassing the policy env allowlist. All parent secrets (API keys, tokens) leaked to MCP servers regardless of allowlist. Fixed: env filtering now happens once in `run.go` before passing to executor; `buildEnv()` only uses explicitly-approved vars.
   - **CRITICAL: Manifest wildcard injection** — Malicious manifests could include `"*"` in `environment` or `network` fields to bypass filtering without CLI flags. Fixed: `ApplyManifestPermissions()` now strips `"*"` from manifest-provided lists (only CLI `--allow-all-env`/`--allow-all-net` can grant blanket access).
