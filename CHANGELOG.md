@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **2026-03-03**: Security hardening of sandbox permission system (5 critical + 5 high-priority fixes):
+  - **CRITICAL: Environment variable leak** — `buildEnv()` in executor inherited full `os.Environ()`, bypassing the policy env allowlist. All parent secrets (API keys, tokens) leaked to MCP servers regardless of allowlist. Fixed: env filtering now happens once in `run.go` before passing to executor; `buildEnv()` only uses explicitly-approved vars.
+  - **CRITICAL: Manifest wildcard injection** — Malicious manifests could include `"*"` in `environment` or `network` fields to bypass filtering without CLI flags. Fixed: `ApplyManifestPermissions()` now strips `"*"` from manifest-provided lists (only CLI `--allow-all-env`/`--allow-all-net` can grant blanket access).
+  - **CRITICAL: Darwin subprocess default-deny inversion** — `perms == nil || perms.Subprocess` in SBPL generation allowed global `process-exec` when no permissions were set (nil). Fixed: changed to `perms != nil && perms.Subprocess` (default-deny).
+  - **HIGH: Reactive proxy wrong suggestions** — Proxy suggested `--allow-write` even when `--allow-fs` was active. Fixed: `buildSandboxSuggestion()` now receives `SandboxContext` and tailors recommendations based on already-active permissions.
+  - **HIGH: Missing env restriction info for LLM** — Warning text only showed env info when `AllEnv=true`. Fixed: now shows specific allowed vars when restricted, or "manifest-declared only" when empty.
+  - Added macOS SBPL per-domain network limitation documentation (sandbox-exec is all-or-nothing for network).
+  - Added comprehensive tests: wildcard injection rejection, env filtering with full os.Environ(), subprocess default-deny verification, combined AllFS+AllNet SBPL, proxy suggestion accuracy with blanket flags.
+
 ### Added
 
 - **2026-03-03**: Fixed blanket permission flags to actually work at runtime, not just in warning text. `--allow-fs` now skips mount namespace on Linux and generates `(allow file-read* file-write*)` in macOS SBPL. `--allow-all-net` skips network namespace on Linux and enables `(allow network*)` on macOS. `--allow-all-env` now uses `"*"` wildcard in `ValidateEnv()` to pass all env vars through (was broken: treated `"*"` as literal var name, stripped everything). `ValidateNetwork()` also supports `"*"` wildcard. Added tests for all blanket flag propagation paths.

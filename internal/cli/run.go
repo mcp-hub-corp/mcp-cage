@@ -514,8 +514,20 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		slog.String("security_policy", "mandatory_limits_enforced"),
 	)
 
-	// Load environment variables
+	// Build complete environment for the MCP server process.
+	// SECURITY: Start with the parent process's environment, overlay env-file
+	// and CLI-provided vars, then filter EVERYTHING through the policy allowlist.
+	// This ensures MCP servers only see explicitly allowed env vars.
 	env := make(map[string]string)
+
+	// Start with parent process environment
+	for _, e := range os.Environ() {
+		if idx := strings.IndexByte(e, '='); idx > 0 {
+			env[e[:idx]] = e[idx+1:]
+		}
+	}
+
+	// Overlay env-file variables (override parent env)
 	if runFlags.envFile != "" {
 		if envFileErr := loadEnvFile(runFlags.envFile, env); envFileErr != nil {
 			// SECURITY: When --env-file is explicitly specified, treat failure as an error
@@ -524,12 +536,15 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Add provided environment variables
+	// Overlay CLI-provided secret environment variables
 	for k, v := range runFlags.secretEnv {
 		env[k] = v
 	}
 
-	// Filter environment based on policy
+	// SECURITY: Filter the COMPLETE environment through the policy allowlist.
+	// This is the single enforcement point — if an env allowlist is set,
+	// only allowed vars pass through. Without this, os.Environ() would leak
+	// all parent secrets (API keys, tokens, etc.) to MCP servers.
 	env = pol.ValidateEnv(env)
 
 	// Create STDIO executor

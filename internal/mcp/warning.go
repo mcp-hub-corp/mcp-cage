@@ -190,6 +190,10 @@ func (w *SecurityWarning) generateSandboxContextWarning() string {
 	// Environment access
 	if ctx.AllEnv {
 		b.WriteString("Environment Variables: FULL ACCESS (--allow-all-env)\n")
+	} else if len(ctx.AllowedEnvVars) > 0 {
+		fmt.Fprintf(&b, "Environment Variables: RESTRICTED (%s)\n", strings.Join(ctx.AllowedEnvVars, ", "))
+	} else {
+		b.WriteString("Environment Variables: RESTRICTED (manifest-declared only)\n")
 	}
 
 	// CLI overrides

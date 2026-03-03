@@ -632,19 +632,33 @@ func TestExtractPathFromError(t *testing.T) {
 
 func TestBuildSandboxSuggestion(t *testing.T) {
 	t.Run("with blocked path", func(t *testing.T) {
-		suggestion := buildSandboxSuggestion("/Users/test/.data", "Operation not permitted")
+		suggestion := buildSandboxSuggestion("/Users/test/.data", "Operation not permitted", nil)
 		assert.Contains(t, suggestion, "/Users/test/.data")
 		assert.Contains(t, suggestion, "--allow-write")
 	})
 
 	t.Run("network error", func(t *testing.T) {
-		suggestion := buildSandboxSuggestion("", "failed to connect to remote server")
+		suggestion := buildSandboxSuggestion("", "failed to connect to remote server", nil)
 		assert.Contains(t, suggestion, "--allow-net")
 	})
 
 	t.Run("generic error", func(t *testing.T) {
-		suggestion := buildSandboxSuggestion("", "some generic error")
+		suggestion := buildSandboxSuggestion("", "some generic error", nil)
 		assert.Contains(t, suggestion, "restricted resource")
+	})
+
+	t.Run("with AllFS active, path error gives different suggestion", func(t *testing.T) {
+		ctx := &SandboxContext{AllFS: true}
+		suggestion := buildSandboxSuggestion("/Users/test/.data", "Operation not permitted", ctx)
+		assert.Contains(t, suggestion, "already fully granted")
+		assert.NotContains(t, suggestion, "--allow-write")
+	})
+
+	t.Run("with AllNet active, network error gives different suggestion", func(t *testing.T) {
+		ctx := &SandboxContext{AllNet: true}
+		suggestion := buildSandboxSuggestion("", "failed to connect to remote server", ctx)
+		assert.Contains(t, suggestion, "already fully granted")
+		assert.Contains(t, suggestion, "connectivity issue")
 	})
 }
 

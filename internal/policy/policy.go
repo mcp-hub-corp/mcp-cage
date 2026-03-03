@@ -79,18 +79,37 @@ func (p *Policy) ApplyManifestPermissions(m *manifest.Manifest) error {
 		return fmt.Errorf("subprocess permission denied by policy for package %s", m.Package.ID)
 	}
 
-	// Store network allowlist from manifest
+	// Store network allowlist from manifest.
+	// SECURITY: Reject wildcard "*" from manifests — only CLI flags can grant blanket access.
+	// A malicious manifest could include "*" to bypass network isolation.
 	if len(m.Permissions.Network) > 0 {
-		p.NetworkAllowlist = m.Permissions.Network
+		filtered := make([]string, 0, len(m.Permissions.Network))
+		for _, n := range m.Permissions.Network {
+			if n == "*" {
+				p.logger.Warn("manifest contains wildcard '*' in network list — ignored (only CLI --allow-all-net can grant blanket access)")
+				continue
+			}
+			filtered = append(filtered, n)
+		}
+		p.NetworkAllowlist = filtered
 		p.logger.Debug("applied manifest network allowlist",
-			slog.Int("count", len(m.Permissions.Network)))
+			slog.Int("count", len(filtered)))
 	}
 
-	// Store env allowlist from manifest (if specified)
+	// Store env allowlist from manifest (if specified).
+	// SECURITY: Reject wildcard "*" from manifests — only CLI flags can grant blanket access.
 	if len(m.Permissions.Environment) > 0 {
-		p.EnvAllowlist = m.Permissions.Environment
+		filtered := make([]string, 0, len(m.Permissions.Environment))
+		for _, e := range m.Permissions.Environment {
+			if e == "*" {
+				p.logger.Warn("manifest contains wildcard '*' in environment list — ignored (only CLI --allow-all-env can grant blanket access)")
+				continue
+			}
+			filtered = append(filtered, e)
+		}
+		p.EnvAllowlist = filtered
 		p.logger.Debug("applied manifest environment allowlist",
-			slog.Int("count", len(m.Permissions.Environment)))
+			slog.Int("count", len(filtered)))
 	}
 
 	return nil

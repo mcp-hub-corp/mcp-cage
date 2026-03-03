@@ -364,3 +364,51 @@ func TestGenerateInstructionsWarning_BlanketFlags(t *testing.T) {
 		assert.Contains(t, text, "--allow-all")
 	})
 }
+
+func TestGenerateInstructionsWarning_EnvRestrictions(t *testing.T) {
+	t.Run("shows specific allowed env vars", func(t *testing.T) {
+		w := &SecurityWarning{
+			PackageName:          "acme/test",
+			Score:                90,
+			CertLevel:            2,
+			ScoreWarningDisabled: true,
+			SandboxContext: &SandboxContext{
+				Platform:       "darwin",
+				AllowedEnvVars: []string{"API_KEY", "DB_HOST"},
+			},
+		}
+		text := w.GenerateInstructionsWarning()
+		assert.Contains(t, text, "RESTRICTED")
+		assert.Contains(t, text, "API_KEY")
+		assert.Contains(t, text, "DB_HOST")
+	})
+
+	t.Run("shows manifest-declared only when no specific vars", func(t *testing.T) {
+		w := &SecurityWarning{
+			PackageName:          "acme/test",
+			Score:                90,
+			CertLevel:            2,
+			ScoreWarningDisabled: true,
+			SandboxContext: &SandboxContext{
+				Platform: "darwin",
+			},
+		}
+		text := w.GenerateInstructionsWarning()
+		assert.Contains(t, text, "manifest-declared only")
+	})
+
+	t.Run("AllEnv shows full access", func(t *testing.T) {
+		w := &SecurityWarning{
+			PackageName:          "acme/test",
+			Score:                90,
+			CertLevel:            2,
+			ScoreWarningDisabled: true,
+			SandboxContext: &SandboxContext{
+				Platform: "darwin",
+				AllEnv:   true,
+			},
+		}
+		text := w.GenerateInstructionsWarning()
+		assert.Contains(t, text, "FULL ACCESS (--allow-all-env)")
+	})
+}

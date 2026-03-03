@@ -125,3 +125,44 @@ func TestSetLogger(t *testing.T) {
 	executor.SetLogger(nil)
 	require.NotNil(t, executor)
 }
+
+func TestBuildEnv_OnlyPassesExplicitVars(t *testing.T) {
+	// SECURITY: Verify buildEnv() does NOT inherit os.Environ().
+	// Only explicitly passed env vars should appear in the output.
+	executor, err := NewSTDIOExecutor(t.TempDir(), &policy.ExecutionLimits{
+		MaxCPU:    1000,
+		MaxMemory: "512M",
+		MaxPIDs:   32,
+		MaxFDs:    256,
+		Timeout:   time.Minute,
+	}, nil, map[string]string{
+		"ALLOWED_VAR": "allowed_value",
+	})
+	require.NoError(t, err)
+
+	envSlice := executor.buildEnv()
+
+	// Should contain only the explicitly passed var
+	assert.Equal(t, 1, len(envSlice))
+	assert.Contains(t, envSlice, "ALLOWED_VAR=allowed_value")
+
+	// Should NOT contain parent process env vars like PATH, HOME, etc.
+	for _, e := range envSlice {
+		assert.NotContains(t, e, "PATH=")
+		assert.NotContains(t, e, "HOME=")
+	}
+}
+
+func TestBuildEnv_EmptyEnvProducesEmptySlice(t *testing.T) {
+	executor, err := NewSTDIOExecutor(t.TempDir(), &policy.ExecutionLimits{
+		MaxCPU:    1000,
+		MaxMemory: "512M",
+		MaxPIDs:   32,
+		MaxFDs:    256,
+		Timeout:   time.Minute,
+	}, nil, nil)
+	require.NoError(t, err)
+
+	envSlice := executor.buildEnv()
+	assert.Empty(t, envSlice)
+}
