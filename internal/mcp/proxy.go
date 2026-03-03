@@ -42,6 +42,9 @@ type MCPProxy struct {
 	// writeMu protects clientWriter when multiple goroutines inject notifications
 	writeMu sync.Mutex
 
+	// closeOnce ensures serverWriter is closed exactly once
+	closeOnce sync.Once
+
 	// initTimeout is the maximum time to wait for the init handshake
 	initTimeout time.Duration
 }
@@ -304,6 +307,20 @@ func (p *MCPProxy) writeToClient(data []byte) (int, error) {
 	return p.clientWriter.Write(data)
 }
 
+// closeServerWriter closes the serverWriter (MCP server's stdin pipe) if it
+// implements io.Closer. This propagates EOF to the MCP server when the client
+// disconnects or when the server's stdout closes. Without this, the MCP server
+// never sees EOF on its stdin and keeps running → deadlock.
+//
+// Safe to call from multiple goroutines; only the first call closes.
+func (p *MCPProxy) closeServerWriter() {
+	p.closeOnce.Do(func() {
+		if closer, ok := p.serverWriter.(io.Closer); ok {
+			_ = closer.Close()
+		}
+	})
+}
+
 // rawCopyWithErrorScanning performs bidirectional copy with sandbox error
 // detection on both the server→client direction and stderr. When a sandbox
 // error pattern is detected in a JSON-RPC response or stderr line, a
@@ -324,6 +341,9 @@ func (p *MCPProxy) rawCopyWithErrorScanning(clientBuf, serverBuf *bufio.Reader) 
 		if _, err := io.Copy(p.serverWriter, clientBuf); err != nil {
 			errCh <- fmt.Errorf("client→server copy: %w", err)
 		}
+		// Client disconnected — close server stdin to propagate EOF.
+		// Without this, the MCP server never sees EOF and keeps running.
+		p.closeServerWriter()
 	}()
 
 	// Server → Client: line-by-line scanning for sandbox errors
@@ -335,12 +355,15 @@ func (p *MCPProxy) rawCopyWithErrorScanning(clientBuf, serverBuf *bufio.Reader) 
 				if err != io.EOF {
 					errCh <- fmt.Errorf("server→client read: %w", err)
 				}
+				// Server exited — close stdin to unblock client→server goroutine
+				p.closeServerWriter()
 				return
 			}
 
 			// Always forward the original line first
 			if _, writeErr := p.writeToClient(appendNewline(line)); writeErr != nil {
 				errCh <- fmt.Errorf("server→client write: %w", writeErr)
+				p.closeServerWriter()
 				return
 			}
 
@@ -580,6 +603,7 @@ func (p *MCPProxy) rawCopyDirect() error {
 		if _, err := io.Copy(p.serverWriter, p.clientReader); err != nil {
 			errCh <- fmt.Errorf("client→server copy: %w", err)
 		}
+		p.closeServerWriter()
 	}()
 
 	// Server → Client
@@ -588,6 +612,7 @@ func (p *MCPProxy) rawCopyDirect() error {
 		if _, err := io.Copy(p.clientWriter, p.serverReader); err != nil {
 			errCh <- fmt.Errorf("server→client copy: %w", err)
 		}
+		p.closeServerWriter()
 	}()
 
 	wg.Wait()
@@ -614,6 +639,7 @@ func (p *MCPProxy) rawCopy(clientBuf, serverBuf *bufio.Reader) error {
 		if _, err := io.Copy(p.serverWriter, clientBuf); err != nil {
 			errCh <- fmt.Errorf("client→server copy: %w", err)
 		}
+		p.closeServerWriter()
 	}()
 
 	// Server → Client
@@ -622,6 +648,7 @@ func (p *MCPProxy) rawCopy(clientBuf, serverBuf *bufio.Reader) error {
 		if _, err := io.Copy(p.clientWriter, serverBuf); err != nil {
 			errCh <- fmt.Errorf("server→client copy: %w", err)
 		}
+		p.closeServerWriter()
 	}()
 
 	wg.Wait()

@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/security-mcp/mcp-client/internal/manifest"
 	"github.com/security-mcp/mcp-client/internal/mcp"
@@ -185,21 +186,6 @@ func (e *STDIOExecutor) Execute(ctx context.Context, entrypoint *manifest.Entryp
 		proxy := mcp.NewMCPProxy(os.Stdin, os.Stdout, stdoutPipe, stdinPipe, e.securityWarning, e.logger)
 		proxy.SetStderr(stderrPipe, e.stderr)
 
-		// Start the proxy after cmd.Start() below — deferred to after Start
-		defer func() {
-			// proxy.Run will be started in a goroutine after cmd.Start
-		}()
-
-		// We need to start the proxy after cmd.Start, so we use a closure
-		// captured by the startProxy variable
-		startProxy := func() {
-			go func() {
-				if proxyErr := proxy.Run(); proxyErr != nil {
-					e.logger.Debug("mcp proxy finished", slog.String("error", proxyErr.Error()))
-				}
-			}()
-		}
-
 		// Apply sandbox restrictions (unless --no-sandbox is set)
 		sb := sandbox.New()
 		if e.noSandbox {
@@ -234,8 +220,19 @@ func (e *STDIOExecutor) Execute(ctx context.Context, entrypoint *manifest.Entryp
 			}
 		}
 
-		// Start the proxy now that the process is running
-		startProxy()
+		// Start the proxy goroutine and track its completion.
+		// CRITICAL: We must wait for the proxy to finish AFTER cmd.Wait().
+		// Without this, Execute() returns immediately when the process exits,
+		// the CLI exits, and the proxy goroutine is orphaned — losing any
+		// in-flight data between client and server.
+		var proxyWg sync.WaitGroup
+		proxyWg.Add(1)
+		go func() {
+			defer proxyWg.Done()
+			if proxyErr := proxy.Run(); proxyErr != nil {
+				e.logger.Debug("mcp proxy finished", slog.String("error", proxyErr.Error()))
+			}
+		}()
 
 		// Ensure cleanup of sandbox resources after process exits
 		defer func() {
@@ -249,6 +246,11 @@ func (e *STDIOExecutor) Execute(ctx context.Context, entrypoint *manifest.Entryp
 
 		// Wait for process to complete or context to cancel
 		err := cmd.Wait()
+
+		// Wait for the proxy goroutine to drain remaining data.
+		// cmd.Wait() closes the pipes, so the proxy's io.Copy loops will
+		// see EOF and exit. This ensures no data is lost.
+		proxyWg.Wait()
 
 		if ctx.Err() == context.DeadlineExceeded {
 			e.logger.Warn("process timeout exceeded", slog.Duration("timeout", e.limits.Timeout))
