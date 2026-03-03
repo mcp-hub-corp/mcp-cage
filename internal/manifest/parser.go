@@ -53,10 +53,11 @@ type Entrypoint struct {
 
 // PermissionsInfo contains requested permissions
 type PermissionsInfo struct {
-	Network     []string `json:"network,omitempty"`     // allowlist of domains/IPs
-	Environment []string `json:"environment,omitempty"` // env var allowlist
-	Subprocess  bool     `json:"subprocess"`            // allow subprocess creation
-	FileSystem  []string `json:"filesystem,omitempty"`  // filesystem paths allowlist
+	Network        []string `json:"network,omitempty"`         // allowlist of domains/IPs
+	Environment    []string `json:"environment,omitempty"`     // env var allowlist
+	Subprocess     bool     `json:"subprocess"`                // allow subprocess creation
+	FileSystem     []string `json:"filesystem,omitempty"`      // read+write filesystem paths
+	FileSystemRead []string `json:"filesystem_read,omitempty"` // read-only filesystem paths
 }
 
 // LimitsInfo contains recommended resource limits
@@ -364,7 +365,7 @@ func parseHubManifest(data []byte) (*Manifest, error) {
 			m.Permissions.Network = hm.Permissions.Network.Outbound
 		}
 		if hm.Permissions.Filesystem != nil {
-			m.Permissions.FileSystem = append(m.Permissions.FileSystem, hm.Permissions.Filesystem.Read...)
+			m.Permissions.FileSystemRead = append(m.Permissions.FileSystemRead, hm.Permissions.Filesystem.Read...)
 			m.Permissions.FileSystem = append(m.Permissions.FileSystem, hm.Permissions.Filesystem.Write...)
 		}
 		m.Permissions.Environment = hm.Permissions.EnvVars

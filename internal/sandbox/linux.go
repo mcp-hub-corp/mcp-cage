@@ -165,9 +165,10 @@ func (s *LinuxSandbox) Apply(cmd *exec.Cmd, limits *policy.ExecutionLimits, perm
 	// share OS threads. Instead, we store the desired paths and document this limitation.
 	// The child process should apply its own Landlock restrictions if needed.
 	// Filesystem isolation is still provided by mount namespaces (CLONE_NEWNS) above.
-	if s.hasLandlock && perms != nil && len(perms.FileSystem) > 0 {
+	if s.hasLandlock && perms != nil && (len(perms.FileSystem) > 0 || len(perms.FileSystemRead) > 0) {
 		s.logger.Debug("Landlock restrictions deferred to child process (parent restriction would affect launcher)",
-			slog.Int("path_count", len(perms.FileSystem)),
+			slog.Int("rw_path_count", len(perms.FileSystem)),
+			slog.Int("ro_path_count", len(perms.FileSystemRead)),
 		)
 		// NOTE: Landlock cannot be applied to the child from the parent process in Go.
 		// Mount namespace isolation (CLONE_NEWNS) provides filesystem restriction instead.

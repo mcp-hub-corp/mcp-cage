@@ -253,6 +253,65 @@ func TestGenerateSBPLProfile(t *testing.T) {
 	})
 }
 
+func TestGenerateSBPLProfile_ReadOnlyPaths(t *testing.T) {
+	workDir := t.TempDir()
+
+	t.Run("read-only filesystem paths", func(t *testing.T) {
+		perms := &manifest.PermissionsInfo{
+			FileSystemRead: []string{"/opt/readonly", "/var/data"},
+		}
+
+		profilePath, err := generateSBPLProfile("/usr/bin/true", perms, workDir)
+		require.NoError(t, err)
+		defer os.Remove(profilePath)
+
+		content, err := os.ReadFile(profilePath)
+		require.NoError(t, err)
+
+		profile := string(content)
+		// Should have file-read* only (no file-write*)
+		assert.Contains(t, profile, "Read-only filesystem paths")
+		assert.Contains(t, profile, "(allow file-read* (subpath \"/opt/readonly\"))")
+		assert.Contains(t, profile, "(allow file-read* (subpath \"/var/data\"))")
+	})
+
+	t.Run("mixed read and write paths", func(t *testing.T) {
+		perms := &manifest.PermissionsInfo{
+			FileSystem:     []string{"/tmp/rw"},
+			FileSystemRead: []string{"/opt/ro"},
+		}
+
+		profilePath, err := generateSBPLProfile("/usr/bin/true", perms, workDir)
+		require.NoError(t, err)
+		defer os.Remove(profilePath)
+
+		content, err := os.ReadFile(profilePath)
+		require.NoError(t, err)
+
+		profile := string(content)
+		// Write paths get file-read* file-write*
+		assert.Contains(t, profile, "(allow file-read* file-write* (subpath \"/tmp/rw\"))")
+		// Read paths get file-read* only
+		assert.Contains(t, profile, "(allow file-read* (subpath \"/opt/ro\"))")
+	})
+
+	t.Run("no read-only paths", func(t *testing.T) {
+		perms := &manifest.PermissionsInfo{
+			FileSystem: []string{"/tmp/rw"},
+		}
+
+		profilePath, err := generateSBPLProfile("/usr/bin/true", perms, workDir)
+		require.NoError(t, err)
+		defer os.Remove(profilePath)
+
+		content, err := os.ReadFile(profilePath)
+		require.NoError(t, err)
+
+		profile := string(content)
+		assert.NotContains(t, profile, "Read-only filesystem paths")
+	})
+}
+
 func TestEscapeSBPLPath(t *testing.T) {
 	// Basic path should pass through
 	assert.Equal(t, "/usr/bin/test", escapeSBPLPath("/usr/bin/test"))

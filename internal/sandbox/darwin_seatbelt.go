@@ -123,12 +123,21 @@ func generateSBPLProfile(commandPath string, perms *manifest.PermissionsInfo, wo
 		fmt.Fprintf(&sb, "(allow file-read* file-write* (subpath \"%s/.local\"))\n\n", escapeSBPLPath(homeDir))
 	}
 
-	// Filesystem rules based on permissions
+	// Filesystem rules based on permissions (read+write paths)
 	if perms != nil && len(perms.FileSystem) > 0 {
-		sb.WriteString("\n; Additional filesystem paths from manifest\n")
+		sb.WriteString("\n; Additional filesystem paths from manifest (read+write)\n")
 		for _, path := range perms.FileSystem {
 			cleanPath := filepath.Clean(path)
 			fmt.Fprintf(&sb, "(allow file-read* file-write* (subpath \"%s\"))\n", escapeSBPLPath(cleanPath))
+		}
+	}
+
+	// Read-only filesystem paths from manifest/CLI
+	if perms != nil && len(perms.FileSystemRead) > 0 {
+		sb.WriteString("\n; Read-only filesystem paths from manifest/CLI\n")
+		for _, path := range perms.FileSystemRead {
+			cleanPath := filepath.Clean(path)
+			fmt.Fprintf(&sb, "(allow file-read* (subpath \"%s\"))\n", escapeSBPLPath(cleanPath))
 		}
 	}
 

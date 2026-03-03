@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **2026-03-03**: Sandbox permission CLI flags and LLM notification system. Added `--allow-read`, `--allow-write`, `--allow-net`, `--allow-subprocess`, `--allow-env` flags to `smcp run` for granting specific sandbox permissions. Added proactive `[SANDBOX CONTEXT]` section in MCP handshake so the LLM knows about sandbox restrictions upfront. Added reactive sandbox error interception — when the sandbox blocks an operation, the proxy detects the error pattern in real-time and injects a `notifications/message` to the LLM explaining what happened and which `--allow-*` flag to suggest. Added `FileSystemRead` field to `PermissionsInfo` for read-only filesystem paths. Added read-only path support in macOS SBPL profiles (`file-read*` only). Proxy now always activates with `--trust` (not just for low-score packages) to enable sandbox context and error scanning for all packages.
+
 ### Fixed
 
 - **2026-02-26**: Fixed missed `mcp` → `smcp` references in `.claude/` agent and skill files (26 files total). Changed `~/.mcp/` → `~/.smcp/` config/cache/audit paths, CLI command references (`mcp run` → `smcp run`, `mcp doctor` → `smcp doctor`, etc.), Cobra `Use: "mcp"` → `Use: "smcp"`, build targets `cmd/mcp` → `cmd/smcp`, cgroup names, and binary references (`./mcp` → `./smcp`). Preserved MCP protocol name, `mcp-client` project name, `MCP_*` env vars, and Go import paths.
