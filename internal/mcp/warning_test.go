@@ -174,3 +174,107 @@ func TestGenerateInstructionsWarning_Score79(t *testing.T) {
 	assert.Contains(t, text, "79/100")
 	assert.Contains(t, text, "Moderate Risk")
 }
+
+func TestGenerateInstructionsWarning_WithSandboxContext(t *testing.T) {
+	w := &SecurityWarning{
+		PackageName: "acme/test-server",
+		Score:       35,
+		CertLevel:   0,
+		SandboxContext: &SandboxContext{
+			Platform:       "darwin",
+			ReadPaths:      []string{"/opt/data"},
+			WritePaths:     []string{"/tmp/work"},
+			NetworkDomains: []string{"api.example.com"},
+			SubprocessOK:   true,
+			CLIOverrides: &PermissionOverrides{
+				WritePaths: []string{"/tmp/work"},
+			},
+		},
+	}
+
+	text := w.GenerateInstructionsWarning()
+	assert.Contains(t, text, "[SECURITY WARNING")
+	assert.Contains(t, text, "[SANDBOX CONTEXT")
+	assert.Contains(t, text, "darwin")
+	assert.Contains(t, text, "Read-Only: /opt/data")
+	assert.Contains(t, text, "Read+Write: /tmp/work")
+	assert.Contains(t, text, "api.example.com")
+	assert.Contains(t, text, "Subprocess: ALLOWED")
+	assert.Contains(t, text, "--allow-write /tmp/work")
+	assert.Contains(t, text, "[END SANDBOX CONTEXT]")
+}
+
+func TestGenerateInstructionsWarning_SandboxOnly_ScoreDisabled(t *testing.T) {
+	w := &SecurityWarning{
+		PackageName:          "acme/safe-server",
+		Score:                90,
+		CertLevel:            2,
+		ScoreWarningDisabled: true,
+		SandboxContext: &SandboxContext{
+			Platform: "darwin",
+		},
+	}
+
+	text := w.GenerateInstructionsWarning()
+	assert.NotContains(t, text, "[SECURITY WARNING")
+	assert.Contains(t, text, "[SANDBOX CONTEXT")
+	assert.Contains(t, text, "darwin")
+	assert.Contains(t, text, "Network Access: DENIED")
+	assert.Contains(t, text, "Subprocess: DENIED")
+}
+
+func TestGenerateInstructionsWarning_SandboxDisabled(t *testing.T) {
+	w := &SecurityWarning{
+		PackageName:          "acme/test",
+		Score:                90,
+		CertLevel:            2,
+		ScoreWarningDisabled: true,
+		SandboxContext: &SandboxContext{
+			Platform:  "darwin",
+			NoSandbox: true,
+		},
+	}
+
+	text := w.GenerateInstructionsWarning()
+	assert.Contains(t, text, "[SANDBOX CONTEXT")
+	assert.Contains(t, text, "DISABLED")
+	assert.NotContains(t, text, "deny-by-default")
+}
+
+func TestGenerateInstructionsWarning_EmptyPaths(t *testing.T) {
+	w := &SecurityWarning{
+		PackageName:          "acme/test",
+		Score:                90,
+		CertLevel:            2,
+		ScoreWarningDisabled: true,
+		SandboxContext: &SandboxContext{
+			Platform: "linux",
+		},
+	}
+
+	text := w.GenerateInstructionsWarning()
+	assert.Contains(t, text, "bundle directory and system paths only")
+	assert.Contains(t, text, "Network Access: DENIED")
+}
+
+func TestGenerateInstructionsWarning_BothScoreAndSandbox(t *testing.T) {
+	w := &SecurityWarning{
+		PackageName: "acme/risky",
+		Score:       30,
+		CertLevel:   0,
+		Findings: &manifest.FindingsSummary{
+			Total:    3,
+			Critical: 1,
+		},
+		SandboxContext: &SandboxContext{
+			Platform:     "darwin",
+			SubprocessOK: true,
+		},
+	}
+
+	text := w.GenerateInstructionsWarning()
+	assert.Contains(t, text, "[SECURITY WARNING")
+	assert.Contains(t, text, "30/100")
+	assert.Contains(t, text, "[SANDBOX CONTEXT")
+	assert.Contains(t, text, "Subprocess: ALLOWED")
+}

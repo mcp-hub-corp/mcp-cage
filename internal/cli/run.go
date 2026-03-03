@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -34,6 +35,11 @@ type runCmdFlags struct {
 	trust            bool
 	warningThreshold int
 	secretEnv        map[string]string
+	allowRead        []string // --allow-read paths (read-only access)
+	allowWrite       []string // --allow-write paths (read+write access)
+	allowNet         []string // --allow-net domains
+	allowSubprocess  bool     // --allow-subprocess
+	allowEnv         []string // --allow-env variables
 }
 
 var runFlags runCmdFlags
@@ -46,6 +52,11 @@ func init() {
 	runCmd.Flags().BoolVar(&runFlags.noSandbox, "no-sandbox", false, "Disable process sandboxing (use with caution)")
 	runCmd.Flags().BoolVar(&runFlags.trust, "trust", false, "Skip interactive confirmation for low-score packages")
 	runCmd.Flags().IntVar(&runFlags.warningThreshold, "warning-threshold", 80, "Security score threshold for LLM security warnings (0-100)")
+	runCmd.Flags().StringArrayVar(&runFlags.allowRead, "allow-read", nil, "Grant read-only access to a path (can be repeated)")
+	runCmd.Flags().StringArrayVar(&runFlags.allowWrite, "allow-write", nil, "Grant read+write access to a path (can be repeated)")
+	runCmd.Flags().StringArrayVar(&runFlags.allowNet, "allow-net", nil, "Grant network access to a domain (can be repeated)")
+	runCmd.Flags().BoolVar(&runFlags.allowSubprocess, "allow-subprocess", false, "Grant subprocess creation permission")
+	runCmd.Flags().StringArrayVar(&runFlags.allowEnv, "allow-env", nil, "Grant access to an environment variable (can be repeated)")
 }
 
 // runMCPServer executes an MCP server from a package reference
@@ -258,6 +269,45 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 			_ = auditLogger.LogError(fmt.Sprintf("%s/%s", org, name), version, fmt.Sprintf("policy application failed: %v", permErr)) //nolint:errcheck // audit logging
 		}
 		return fmt.Errorf("policy application failed: %w", permErr)
+	}
+
+	// Merge CLI permission flags into manifest permissions (additive)
+	var cliOverrides *mcp.PermissionOverrides
+	hasCLIPerms := len(runFlags.allowRead) > 0 || len(runFlags.allowWrite) > 0 ||
+		len(runFlags.allowNet) > 0 || runFlags.allowSubprocess || len(runFlags.allowEnv) > 0
+
+	if hasCLIPerms {
+		cliOverrides = &mcp.PermissionOverrides{
+			ReadPaths:  runFlags.allowRead,
+			WritePaths: runFlags.allowWrite,
+			Networks:   runFlags.allowNet,
+			Subprocess: runFlags.allowSubprocess,
+			EnvVars:    runFlags.allowEnv,
+		}
+	}
+
+	for _, p := range runFlags.allowRead {
+		clean := filepath.Clean(p)
+		if filepath.IsAbs(clean) {
+			mf.Permissions.FileSystemRead = append(mf.Permissions.FileSystemRead, clean)
+		}
+	}
+	for _, p := range runFlags.allowWrite {
+		clean := filepath.Clean(p)
+		if filepath.IsAbs(clean) {
+			mf.Permissions.FileSystem = append(mf.Permissions.FileSystem, clean)
+		}
+	}
+	if len(runFlags.allowNet) > 0 {
+		mf.Permissions.Network = append(mf.Permissions.Network, runFlags.allowNet...)
+		pol.NetworkAllowlist = append(pol.NetworkAllowlist, runFlags.allowNet...)
+	}
+	if runFlags.allowSubprocess {
+		mf.Permissions.Subprocess = true
+	}
+	if len(runFlags.allowEnv) > 0 {
+		mf.Permissions.Environment = append(mf.Permissions.Environment, runFlags.allowEnv...)
+		pol.EnvAllowlist = append(pol.EnvAllowlist, runFlags.allowEnv...)
 	}
 
 	// Select entrypoint
@@ -525,26 +575,44 @@ func runMCPServer(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Inject security warning into MCP protocol for LLM awareness.
-	// Only activated when --trust is set (user skips interactive confirmation) AND
-	// the security score is below the warning threshold. This ensures the LLM
-	// receives the warning even though the human doesn't see the terminal.
+	// Inject security warning and sandbox context into MCP protocol for LLM awareness.
+	// Always activated when --trust is set (used from LLM clients like Claude Code).
+	// - Score warning: only if score < threshold
+	// - Sandbox context: always (so LLM knows about restrictions and can suggest --allow-* flags)
+	// - Reactive error scanning: always when sandbox is active (detects sandbox blocks in real-time)
 	warningThreshold := cfg.Policy.WarningThreshold
 	if runFlags.warningThreshold != 80 {
 		// CLI flag overrides config
 		warningThreshold = runFlags.warningThreshold
 	}
-	if runFlags.trust && mcp.NeedsWarning(secScore, warningThreshold) {
-		stdioExec.SetSecurityWarning(&mcp.SecurityWarning{
-			PackageName: fmt.Sprintf("%s/%s", org, name),
-			Score:       secScore,
-			CertLevel:   certLevel,
-			Findings:    findings,
-			Origin:      origin,
-		})
-		logger.Debug("security warning proxy enabled",
+	if runFlags.trust {
+		sandboxCtx := &mcp.SandboxContext{
+			Platform:       runtime.GOOS,
+			ReadPaths:      mf.Permissions.FileSystemRead,
+			WritePaths:     mf.Permissions.FileSystem,
+			NetworkDomains: mf.Permissions.Network,
+			SubprocessOK:   mf.Permissions.Subprocess,
+			AllowedEnvVars: mf.Permissions.Environment,
+			NoSandbox:      runFlags.noSandbox,
+			CLIOverrides:   cliOverrides,
+		}
+
+		warning := &mcp.SecurityWarning{
+			PackageName:          fmt.Sprintf("%s/%s", org, name),
+			Score:                secScore,
+			CertLevel:            certLevel,
+			Findings:             findings,
+			Origin:               origin,
+			SandboxContext:       sandboxCtx,
+			ScoreWarningDisabled: !mcp.NeedsWarning(secScore, warningThreshold),
+		}
+		stdioExec.SetSecurityWarning(warning)
+		logger.Debug("security proxy enabled",
 			slog.Int("score", secScore),
 			slog.Int("threshold", warningThreshold),
+			slog.Bool("score_warning", !warning.ScoreWarningDisabled),
+			slog.Bool("sandbox_context", true),
+			slog.Bool("error_scanning", !runFlags.noSandbox),
 		)
 	}
 

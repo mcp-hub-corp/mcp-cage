@@ -454,3 +454,212 @@ func TestInjectInstructions_WithExisting(t *testing.T) {
 	origIdx := strings.Index(modResult.Instructions, "Use this server")
 	assert.Less(t, warningIdx, origIdx)
 }
+
+func TestProxy_DetectsSandboxError(t *testing.T) {
+	warning := &SecurityWarning{
+		PackageName: "acme/test",
+		Score:       85,
+		CertLevel:   2,
+		SandboxContext: &SandboxContext{
+			Platform: "darwin",
+		},
+	}
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	proxy := NewMCPProxy(nil, nil, nil, nil, warning, logger)
+
+	// Build a JSON-RPC error response containing a sandbox error
+	errMsg := JSONRPCMessage{
+		JSONRPC: "2.0",
+		ID:      json.RawMessage(`1`),
+		Error:   json.RawMessage(`{"code":-32000,"message":"[Errno 1] Operation not permitted: '/Users/cr0hn/.mcp_schrodinger'"}`),
+	}
+	errBytes, _ := json.Marshal(errMsg)
+
+	notification := proxy.detectSandboxError(errBytes)
+	require.NotNil(t, notification, "should detect sandbox error")
+
+	// Verify the notification is valid JSON-RPC
+	var notifMsg JSONRPCMessage
+	require.NoError(t, json.Unmarshal(notification, &notifMsg))
+	assert.Equal(t, "notifications/message", notifMsg.Method)
+
+	var params NotificationParams
+	require.NoError(t, json.Unmarshal(notifMsg.Params, &params))
+	assert.Equal(t, "warning", params.Level)
+	assert.Equal(t, "mcp-hub-sandbox", params.Logger)
+	assert.Contains(t, params.Data, "SMCP SANDBOX ALERT")
+	assert.Contains(t, params.Data, "--allow-write")
+}
+
+func TestProxy_DetectsSandboxError_PermissionDenied(t *testing.T) {
+	warning := &SecurityWarning{
+		PackageName: "acme/test",
+		Score:       85,
+		CertLevel:   2,
+		SandboxContext: &SandboxContext{
+			Platform: "linux",
+		},
+	}
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	proxy := NewMCPProxy(nil, nil, nil, nil, warning, logger)
+
+	errMsg := JSONRPCMessage{
+		JSONRPC: "2.0",
+		ID:      json.RawMessage(`2`),
+		Error:   json.RawMessage(`{"code":-32000,"message":"Permission denied: '/etc/secret'"}`),
+	}
+	errBytes, _ := json.Marshal(errMsg)
+
+	notification := proxy.detectSandboxError(errBytes)
+	require.NotNil(t, notification)
+
+	var notifMsg JSONRPCMessage
+	require.NoError(t, json.Unmarshal(notification, &notifMsg))
+	var params NotificationParams
+	require.NoError(t, json.Unmarshal(notifMsg.Params, &params))
+	assert.Contains(t, params.Data, "/etc/secret")
+}
+
+func TestProxy_NoFalsePositives_NonJSON(t *testing.T) {
+	warning := &SecurityWarning{
+		PackageName: "acme/test",
+		Score:       85,
+		CertLevel:   2,
+		SandboxContext: &SandboxContext{
+			Platform: "darwin",
+		},
+	}
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	proxy := NewMCPProxy(nil, nil, nil, nil, warning, logger)
+
+	// Non-JSON line with sandbox error pattern should NOT trigger notification
+	notification := proxy.detectSandboxError([]byte("Operation not permitted in some log"))
+	assert.Nil(t, notification, "non-JSON should not trigger notification")
+}
+
+func TestProxy_NoFalsePositives_Request(t *testing.T) {
+	warning := &SecurityWarning{
+		PackageName: "acme/test",
+		Score:       85,
+		CertLevel:   2,
+		SandboxContext: &SandboxContext{
+			Platform: "darwin",
+		},
+	}
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	proxy := NewMCPProxy(nil, nil, nil, nil, warning, logger)
+
+	// JSON-RPC request (not response) with sandbox error pattern should NOT trigger
+	reqMsg := JSONRPCMessage{
+		JSONRPC: "2.0",
+		ID:      json.RawMessage(`1`),
+		Method:  "tools/call",
+		Params:  json.RawMessage(`{"name":"test","args":{"text":"Operation not permitted"}}`),
+	}
+	reqBytes, _ := json.Marshal(reqMsg)
+	notification := proxy.detectSandboxError(reqBytes)
+	assert.Nil(t, notification, "request messages should not trigger notification")
+}
+
+func TestProxy_NoFalsePositives_NormalResponse(t *testing.T) {
+	warning := &SecurityWarning{
+		PackageName: "acme/test",
+		Score:       85,
+		CertLevel:   2,
+		SandboxContext: &SandboxContext{
+			Platform: "darwin",
+		},
+	}
+
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	proxy := NewMCPProxy(nil, nil, nil, nil, warning, logger)
+
+	// Normal success response should NOT trigger
+	respMsg := JSONRPCMessage{
+		JSONRPC: "2.0",
+		ID:      json.RawMessage(`1`),
+		Result:  json.RawMessage(`{"content":[{"type":"text","text":"hello"}]}`),
+	}
+	respBytes, _ := json.Marshal(respMsg)
+	notification := proxy.detectSandboxError(respBytes)
+	assert.Nil(t, notification, "normal responses should not trigger notification")
+}
+
+func TestExtractPathFromError(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			"single quoted path after not permitted",
+			"[Errno 1] Operation not permitted: '/Users/cr0hn/.mcp_schrodinger'",
+			"/Users/cr0hn/.mcp_schrodinger",
+		},
+		{
+			"double quoted path after denied",
+			`Permission denied: "/etc/secret"`,
+			"/etc/secret",
+		},
+		{
+			"single quoted path after denied",
+			"Permission denied: '/var/data/config'",
+			"/var/data/config",
+		},
+		{
+			"no path present",
+			"Operation not permitted",
+			"",
+		},
+		{
+			"empty string",
+			"",
+			"",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := extractPathFromError(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestBuildSandboxSuggestion(t *testing.T) {
+	t.Run("with blocked path", func(t *testing.T) {
+		suggestion := buildSandboxSuggestion("/Users/test/.data", "Operation not permitted")
+		assert.Contains(t, suggestion, "/Users/test/.data")
+		assert.Contains(t, suggestion, "--allow-write")
+	})
+
+	t.Run("network error", func(t *testing.T) {
+		suggestion := buildSandboxSuggestion("", "failed to connect to remote server")
+		assert.Contains(t, suggestion, "--allow-net")
+	})
+
+	t.Run("generic error", func(t *testing.T) {
+		suggestion := buildSandboxSuggestion("", "some generic error")
+		assert.Contains(t, suggestion, "restricted resource")
+	})
+}
+
+func TestBuildSandboxErrorNotification(t *testing.T) {
+	notification := buildSandboxErrorNotification("Try --allow-write /tmp/test")
+
+	assert.Equal(t, "2.0", notification.JSONRPC)
+	assert.Equal(t, "notifications/message", notification.Method)
+	assert.Empty(t, notification.ID)
+
+	var params NotificationParams
+	require.NoError(t, json.Unmarshal(notification.Params, &params))
+	assert.Equal(t, "warning", params.Level)
+	assert.Equal(t, "mcp-hub-sandbox", params.Logger)
+	assert.Contains(t, params.Data, "SMCP SANDBOX ALERT")
+	assert.Contains(t, params.Data, "Try --allow-write /tmp/test")
+	assert.Contains(t, params.Data, "MUST inform the user")
+}

@@ -6,19 +6,21 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 )
 
 // MCPProxy intercepts the MCP STDIO handshake to inject security warnings
-// into the protocol. After the handshake completes, it switches to raw
-// bidirectional io.Copy for zero overhead.
+// into the protocol. After the handshake completes, it either switches to
+// raw io.Copy (zero overhead) or line-by-line scanning mode that detects
+// sandbox errors and injects notifications/message alerts to the LLM.
 //
 // State machine:
 //  1. Detect "initialize" request from client → save request ID
 //  2. Detect response with matching ID from server → modify instructions → forward
 //  3. Detect "notifications/initialized" from client → inject notifications/message → forward
-//  4. Switch to raw io.Copy (bidirectional)
+//  4. Switch to raw io.Copy or error-scanning mode (based on SandboxContext)
 type MCPProxy struct {
 	// clientReader reads from the LLM client (original stdin)
 	clientReader io.Reader
@@ -34,6 +36,17 @@ type MCPProxy struct {
 
 	// initTimeout is the maximum time to wait for the init handshake
 	initTimeout time.Duration
+}
+
+// sandboxErrorPatterns are error strings that indicate a sandbox-blocked operation.
+// Fast pre-check avoids JSON parsing on every message.
+var sandboxErrorPatterns = []string{
+	"Operation not permitted",
+	"Permission denied",
+	"[Errno 1]",
+	"[Errno 13]",
+	"EACCES",
+	"EPERM",
 }
 
 // NewMCPProxy creates a proxy that intercepts the MCP init handshake.
@@ -65,7 +78,7 @@ func (p *MCPProxy) SetInitTimeout(d time.Duration) {
 }
 
 // Run starts the proxy. It blocks until the connection closes or an error occurs.
-// After the init handshake, it switches to raw io.Copy for zero overhead.
+// After the init handshake, it switches to raw io.Copy or error-scanning mode.
 func (p *MCPProxy) Run() error {
 	clientBuf := bufio.NewReader(p.clientReader)
 	serverBuf := bufio.NewReader(p.serverReader)
@@ -89,10 +102,13 @@ func (p *MCPProxy) Run() error {
 			slog.Duration("timeout", p.initTimeout))
 	}
 
-	// Phase 2: Raw bidirectional copy
+	// Phase 2: Post-handshake
 	if handshakeCompleted {
-		// Handshake goroutine has exited — safe to use buffered readers
-		// (preserves any data already buffered during handshake).
+		// If sandbox context is set and sandbox is active, use error-scanning mode
+		if p.warning != nil && p.warning.SandboxContext != nil && !p.warning.SandboxContext.NoSandbox {
+			return p.rawCopyWithErrorScanning(clientBuf, serverBuf)
+		}
+		// Raw mode: zero overhead passthrough
 		return p.rawCopy(clientBuf, serverBuf)
 	}
 
@@ -244,6 +260,172 @@ func (p *MCPProxy) buildNotification() JSONRPCMessage {
 		Level:  "warning",
 		Logger: "mcp-hub-security",
 		Data:   p.warning.GenerateNotificationWarning(),
+	}
+	paramsBytes, _ := json.Marshal(params) //nolint:errcheck // NotificationParams always marshals
+
+	return JSONRPCMessage{
+		JSONRPC: "2.0",
+		Method:  "notifications/message",
+		Params:  paramsBytes,
+	}
+}
+
+// rawCopyWithErrorScanning performs bidirectional copy with sandbox error
+// detection on the server→client direction. When a sandbox error pattern
+// is detected in a JSON-RPC response, a notifications/message is injected
+// after the original message to alert the LLM.
+//
+// Client→Server: raw io.Copy (no interception needed)
+// Server→Client: line-by-line scanning for sandbox error patterns
+func (p *MCPProxy) rawCopyWithErrorScanning(clientBuf, serverBuf *bufio.Reader) error {
+	var wg sync.WaitGroup
+	errCh := make(chan error, 2)
+
+	wg.Add(2)
+
+	// Client → Server: raw copy (no interception needed)
+	go func() {
+		defer wg.Done()
+		if _, err := io.Copy(p.serverWriter, clientBuf); err != nil {
+			errCh <- fmt.Errorf("client→server copy: %w", err)
+		}
+	}()
+
+	// Server → Client: line-by-line scanning for sandbox errors
+	go func() {
+		defer wg.Done()
+		for {
+			line, err := readLine(serverBuf)
+			if err != nil {
+				if err != io.EOF {
+					errCh <- fmt.Errorf("server→client read: %w", err)
+				}
+				return
+			}
+
+			// Always forward the original line first
+			if _, writeErr := p.clientWriter.Write(appendNewline(line)); writeErr != nil {
+				errCh <- fmt.Errorf("server→client write: %w", writeErr)
+				return
+			}
+
+			// Detect sandbox errors and inject notification AFTER the error response
+			if notification := p.detectSandboxError(line); notification != nil {
+				if _, writeErr := p.clientWriter.Write(appendNewline(notification)); writeErr != nil {
+					p.logger.Warn("failed to inject sandbox notification",
+						slog.String("error", writeErr.Error()))
+				}
+			}
+		}
+	}()
+
+	wg.Wait()
+	close(errCh)
+
+	for err := range errCh {
+		return err
+	}
+	return nil
+}
+
+// detectSandboxError checks if a line contains a sandbox error pattern.
+// Uses a fast string pre-check to avoid JSON parsing on every message.
+// Returns the notification bytes to inject, or nil if no sandbox error detected.
+func (p *MCPProxy) detectSandboxError(line []byte) []byte {
+	// Fast pre-check: any sandbox error pattern present?
+	lineStr := string(line)
+	found := false
+	for _, pattern := range sandboxErrorPatterns {
+		if strings.Contains(lineStr, pattern) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil
+	}
+
+	// Verify it's a JSON-RPC response (not random log output)
+	var msg JSONRPCMessage
+	if err := json.Unmarshal(line, &msg); err != nil {
+		return nil
+	}
+	if !msg.IsResponse() {
+		return nil
+	}
+
+	// Extract the blocked path from the error for a specific suggestion
+	blockedPath := extractPathFromError(lineStr)
+	suggestion := buildSandboxSuggestion(blockedPath, lineStr)
+
+	// Build notifications/message notification
+	notification := buildSandboxErrorNotification(suggestion)
+	notifBytes, err := json.Marshal(notification)
+	if err != nil {
+		return nil
+	}
+
+	p.logger.Debug("sandbox error detected, injecting notification",
+		slog.String("blocked_path", blockedPath))
+
+	return notifBytes
+}
+
+// extractPathFromError extracts a filesystem path from sandbox error messages.
+// Matches patterns like: "not permitted: '/path'" or "denied: '/path'"
+func extractPathFromError(errText string) string {
+	for _, marker := range []string{
+		"not permitted: '", "denied: '",
+		"not permitted: \"", "denied: \"",
+	} {
+		idx := strings.Index(errText, marker)
+		if idx >= 0 {
+			start := idx + len(marker)
+			quote := marker[len(marker)-1]
+			end := strings.IndexByte(errText[start:], quote)
+			if end > 0 {
+				return errText[start : start+end]
+			}
+		}
+	}
+	return ""
+}
+
+// buildSandboxSuggestion builds a human-readable suggestion based on
+// the blocked path and error context.
+func buildSandboxSuggestion(blockedPath, errText string) string {
+	if blockedPath != "" {
+		return fmt.Sprintf("The MCP server tried to access '%s' which is outside the sandbox.\n"+
+			"Suggested fix: add --allow-write %s to the smcp run command.", blockedPath, blockedPath)
+	}
+	if strings.Contains(errText, "network") || strings.Contains(errText, "connect") {
+		return "The MCP server tried to make a network connection which is blocked.\n" +
+			"Suggested fix: add --allow-net <domain> to the smcp run command."
+	}
+	return "The MCP server tried to access a restricted resource."
+}
+
+// buildSandboxErrorNotification creates a JSON-RPC notifications/message
+// that alerts the LLM about a sandbox-blocked operation.
+func buildSandboxErrorNotification(suggestion string) JSONRPCMessage {
+	var data strings.Builder
+	data.WriteString("[SMCP SANDBOX ALERT] The previous error was caused by SMCP's security sandbox ")
+	data.WriteString("blocking a restricted operation to protect the user's system.\n\n")
+
+	if suggestion != "" {
+		data.WriteString(suggestion)
+		data.WriteString("\n\n")
+	}
+
+	data.WriteString("You MUST inform the user that:\n")
+	data.WriteString("1. SMCP blocked this operation to protect their system\n")
+	data.WriteString("2. They can grant access by adding the appropriate flag to the smcp command\n")
+	data.WriteString("3. Available flags: --allow-read <path>, --allow-write <path>, --allow-net <domain>, --allow-subprocess\n")
+
+	params := NotificationParams{
+		Level:  "warning",
+		Logger: "mcp-hub-sandbox",
+		Data:   data.String(),
 	}
 	paramsBytes, _ := json.Marshal(params) //nolint:errcheck // NotificationParams always marshals
 
