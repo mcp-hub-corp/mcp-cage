@@ -88,6 +88,25 @@ func (l *lineReader) Bytes() []byte {
 	return result
 }
 
+// syncBuffer is a thread-safe bytes.Buffer for use in tests where a goroutine
+// writes (e.g., processStderr forwarding) while the test reads concurrently.
+type syncBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (sb *syncBuffer) Write(p []byte) (int, error) {
+	sb.mu.Lock()
+	defer sb.mu.Unlock()
+	return sb.buf.Write(p)
+}
+
+func (sb *syncBuffer) String() string {
+	sb.mu.Lock()
+	defer sb.mu.Unlock()
+	return sb.buf.String()
+}
+
 func TestProxy_HandshakeInjectsWarning(t *testing.T) {
 	warning := &SecurityWarning{
 		PackageName: "acme/test",
@@ -698,11 +717,11 @@ func TestProxy_StderrScanning_InjectsNotification(t *testing.T) {
 
 	// Stderr pipe: simulates MCP server stderr output
 	stderrR, stderrW := io.Pipe()
-	var stderrForward bytes.Buffer
+	stderrForward := &syncBuffer{}
 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	proxy := NewMCPProxy(clientToProxyR, proxyToClientW, serverToProxyR, proxyToServerW, warning, logger)
-	proxy.SetStderr(stderrR, &stderrForward)
+	proxy.SetStderr(stderrR, stderrForward)
 
 	// Start mock server
 	go mockMCPServer(proxyToServerR, serverToProxyW, "")
@@ -790,11 +809,11 @@ func TestProxy_StderrScanning_NoFalsePositives(t *testing.T) {
 	serverToProxyR, serverToProxyW := io.Pipe()
 
 	stderrR, stderrW := io.Pipe()
-	var stderrForward bytes.Buffer
+	stderrForward := &syncBuffer{}
 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	proxy := NewMCPProxy(clientToProxyR, proxyToClientW, serverToProxyR, proxyToServerW, warning, logger)
-	proxy.SetStderr(stderrR, &stderrForward)
+	proxy.SetStderr(stderrR, stderrForward)
 
 	go mockMCPServer(proxyToServerR, serverToProxyW, "")
 
@@ -838,7 +857,8 @@ func TestProxy_StderrScanning_NoFalsePositives(t *testing.T) {
 	_, _ = stderrW.Write([]byte("INFO: Server started on port 8080\n"))
 	_, _ = stderrW.Write([]byte("DEBUG: Loading configuration\n"))
 
-	// Give time for processing
+	// Close stderr to let processStderr() finish, then wait for drain
+	stderrW.Close()
 	time.Sleep(200 * time.Millisecond)
 
 	outputStr := output.String()
