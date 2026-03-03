@@ -338,37 +338,16 @@ func (e *STDIOExecutor) Execute(ctx context.Context, entrypoint *manifest.Entryp
 	return nil
 }
 
-// buildEnv builds the environment for the process
+// buildEnv builds the environment for the process.
+// SECURITY: Only passes through env vars explicitly provided by the caller.
+// The caller (run.go) is responsible for filtering os.Environ() through the
+// policy allowlist before passing env vars here. This prevents leaking the
+// parent process's full environment (secrets, tokens, etc.) to MCP servers.
 func (e *STDIOExecutor) buildEnv() []string {
-	envMap := make(map[string]string)
-
-	// Start with current environment
-	for _, env := range os.Environ() {
-		// Parse key=value
-		var key, value string
-		for i := 0; i < len(env); i++ {
-			if env[i] == '=' {
-				key = env[:i]
-				value = env[i+1:]
-				break
-			}
-		}
-		if key != "" {
-			envMap[key] = value
-		}
-	}
-
-	// Add provided env vars (override existing)
+	envSlice := make([]string, 0, len(e.env))
 	for k, v := range e.env {
-		envMap[k] = v
-	}
-
-	// Convert to slice
-	envSlice := make([]string, 0, len(envMap))
-	for k, v := range envMap {
 		envSlice = append(envSlice, k+"="+v)
 	}
-
 	return envSlice
 }
 

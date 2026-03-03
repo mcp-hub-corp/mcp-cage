@@ -365,6 +365,81 @@ func TestGenerateSBPLProfile_BlanketFlags(t *testing.T) {
 	})
 }
 
+func TestGenerateSBPLProfile_CombinedBlanketFlags(t *testing.T) {
+	workDir := t.TempDir()
+
+	t.Run("AllFS + AllNet combined", func(t *testing.T) {
+		perms := &manifest.PermissionsInfo{
+			AllFS:  true,
+			AllNet: true,
+		}
+
+		profilePath, err := generateSBPLProfile("/usr/bin/true", perms, workDir)
+		require.NoError(t, err)
+		defer os.Remove(profilePath)
+
+		content, err := os.ReadFile(profilePath)
+		require.NoError(t, err)
+
+		profile := string(content)
+		assert.Contains(t, profile, "FULL FILESYSTEM ACCESS")
+		assert.Contains(t, profile, "(allow file-read* file-write*)")
+		assert.Contains(t, profile, "(allow network*)")
+		assert.NotContains(t, profile, "(deny network*)")
+	})
+}
+
+func TestGenerateSBPLProfile_SubprocessDefaultDeny(t *testing.T) {
+	workDir := t.TempDir()
+
+	t.Run("nil perms denies subprocess", func(t *testing.T) {
+		profilePath, err := generateSBPLProfile("/usr/bin/true", nil, workDir)
+		require.NoError(t, err)
+		defer os.Remove(profilePath)
+
+		content, err := os.ReadFile(profilePath)
+		require.NoError(t, err)
+
+		profile := string(content)
+		assert.Contains(t, profile, "Subprocess restricted")
+		// Should NOT have global process-exec allow
+		assert.NotContains(t, profile, "Subprocess creation allowed")
+	})
+
+	t.Run("subprocess false denies subprocess", func(t *testing.T) {
+		perms := &manifest.PermissionsInfo{
+			Subprocess: false,
+		}
+
+		profilePath, err := generateSBPLProfile("/usr/bin/true", perms, workDir)
+		require.NoError(t, err)
+		defer os.Remove(profilePath)
+
+		content, err := os.ReadFile(profilePath)
+		require.NoError(t, err)
+
+		profile := string(content)
+		assert.Contains(t, profile, "Subprocess restricted")
+	})
+
+	t.Run("subprocess true allows subprocess", func(t *testing.T) {
+		perms := &manifest.PermissionsInfo{
+			Subprocess: true,
+		}
+
+		profilePath, err := generateSBPLProfile("/usr/bin/true", perms, workDir)
+		require.NoError(t, err)
+		defer os.Remove(profilePath)
+
+		content, err := os.ReadFile(profilePath)
+		require.NoError(t, err)
+
+		profile := string(content)
+		assert.Contains(t, profile, "Subprocess creation allowed")
+		assert.Contains(t, profile, "(allow process-exec)")
+	})
+}
+
 func TestEscapeSBPLPath(t *testing.T) {
 	// Basic path should pass through
 	assert.Equal(t, "/usr/bin/test", escapeSBPLPath("/usr/bin/test"))

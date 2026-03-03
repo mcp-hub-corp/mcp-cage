@@ -356,7 +356,13 @@ func (p *MCPProxy) detectSandboxError(line []byte) []byte {
 
 	// Extract the blocked path from the error for a specific suggestion
 	blockedPath := extractPathFromError(lineStr)
-	suggestion := buildSandboxSuggestion(blockedPath, lineStr)
+
+	// Pass sandbox context so suggestions don't recommend already-active flags
+	var ctx *SandboxContext
+	if p.warning != nil {
+		ctx = p.warning.SandboxContext
+	}
+	suggestion := buildSandboxSuggestion(blockedPath, lineStr, ctx)
 
 	// Build notifications/message notification
 	notification := buildSandboxErrorNotification(suggestion)
@@ -392,15 +398,29 @@ func extractPathFromError(errText string) string {
 }
 
 // buildSandboxSuggestion builds a human-readable suggestion based on
-// the blocked path and error context.
-func buildSandboxSuggestion(blockedPath, errText string) string {
+// the blocked path, error context, and current sandbox permissions.
+// When blanket flags are already active, it avoids suggesting them again
+// and provides more accurate diagnostics.
+func buildSandboxSuggestion(blockedPath, errText string, ctx *SandboxContext) string {
 	if blockedPath != "" {
+		// If AllFS is already active, the error is likely from a different restriction
+		if ctx != nil && ctx.AllFS {
+			return fmt.Sprintf("The MCP server tried to access '%s'. Filesystem access is already "+
+				"fully granted (--allow-fs). This error may be caused by another restriction "+
+				"(e.g., network, subprocess, or OS-level protection).", blockedPath)
+		}
 		return fmt.Sprintf("The MCP server tried to access '%s' which is outside the sandbox.\n"+
-			"Suggested fix: add --allow-write %s to the smcp run command.", blockedPath, blockedPath)
+			"Suggested fix: add --allow-write %s to the smcp run command "+
+			"(or --allow-fs for full filesystem access).", blockedPath, blockedPath)
 	}
 	if strings.Contains(errText, "network") || strings.Contains(errText, "connect") {
+		if ctx != nil && ctx.AllNet {
+			return "The MCP server encountered a network error. Network access is already " +
+				"fully granted (--allow-all-net). This may be a connectivity issue rather than a sandbox restriction."
+		}
 		return "The MCP server tried to make a network connection which is blocked.\n" +
-			"Suggested fix: add --allow-net <domain> to the smcp run command."
+			"Suggested fix: add --allow-net <domain> to the smcp run command " +
+			"(or --allow-all-net for all domains)."
 	}
 	return "The MCP server tried to access a restricted resource."
 }

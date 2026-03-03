@@ -96,7 +96,11 @@ func generateSBPLProfile(commandPath string, perms *manifest.PermissionsInfo, wo
 		sb.WriteString("(allow file-read* file-write*)\n")
 	}
 
-	// Network rules based on permissions
+	// Network rules based on permissions.
+	// KNOWN LIMITATION: macOS sandbox-exec does not support per-domain network filtering.
+	// Any network permission (even a single domain) results in full network access.
+	// True per-domain filtering requires a userspace proxy or packet filter, which is
+	// beyond the scope of sandbox-exec SBPL profiles. Linux uses network namespaces instead.
 	if perms != nil && (perms.AllNet || len(perms.Network) > 0) {
 		sb.WriteString("; Network access (allowed by manifest/CLI)\n")
 		sb.WriteString("(allow network*)\n")
@@ -108,9 +112,10 @@ func generateSBPLProfile(commandPath string, perms *manifest.PermissionsInfo, wo
 
 	// Subprocess control: deny-default already blocks process-exec.
 	// The specific allows above (command binary + runtime dirs) punch holes.
-	// When subprocess is allowed, open process-exec globally.
-	if perms == nil || perms.Subprocess {
-		sb.WriteString("; Subprocess creation allowed\n")
+	// When subprocess is explicitly allowed in the manifest, open process-exec globally.
+	// SECURITY: Default-deny — nil perms means no subprocess (not the opposite).
+	if perms != nil && perms.Subprocess {
+		sb.WriteString("; Subprocess creation allowed (manifest declares subprocess: true)\n")
 		sb.WriteString("(allow process-exec)\n")
 	} else {
 		sb.WriteString("; Subprocess restricted: only command binary and runtime directories allowed\n")

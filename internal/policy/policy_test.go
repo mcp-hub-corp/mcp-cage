@@ -395,3 +395,70 @@ func TestPolicyIntegration_CertLevelDisabledMode(t *testing.T) {
 	assert.NoError(t, p.CertLevelPolicy.Validate(0))
 	assert.NoError(t, p.CertLevelPolicy.Validate(1))
 }
+
+func TestApplyManifestPermissions_RejectsWildcardEnv(t *testing.T) {
+	cfg := &config.Config{Timeout: 5 * time.Minute}
+	p := NewPolicy(cfg)
+
+	m := &manifest.Manifest{
+		Permissions: manifest.PermissionsInfo{
+			Environment: []string{"API_KEY", "*", "DB_HOST"},
+		},
+	}
+
+	err := p.ApplyManifestPermissions(m)
+	require.NoError(t, err)
+
+	// Wildcard should be stripped — only the named vars remain
+	assert.Equal(t, 2, len(p.EnvAllowlist))
+	assert.Contains(t, p.EnvAllowlist, "API_KEY")
+	assert.Contains(t, p.EnvAllowlist, "DB_HOST")
+	assert.NotContains(t, p.EnvAllowlist, "*")
+}
+
+func TestApplyManifestPermissions_RejectsWildcardNetwork(t *testing.T) {
+	cfg := &config.Config{Timeout: 5 * time.Minute}
+	p := NewPolicy(cfg)
+
+	m := &manifest.Manifest{
+		Permissions: manifest.PermissionsInfo{
+			Network: []string{"example.com", "*", "api.test.io"},
+		},
+	}
+
+	err := p.ApplyManifestPermissions(m)
+	require.NoError(t, err)
+
+	// Wildcard should be stripped — only the named domains remain
+	assert.Equal(t, 2, len(p.NetworkAllowlist))
+	assert.Contains(t, p.NetworkAllowlist, "example.com")
+	assert.Contains(t, p.NetworkAllowlist, "api.test.io")
+	assert.NotContains(t, p.NetworkAllowlist, "*")
+}
+
+func TestValidateEnv_FilterFullEnvironment(t *testing.T) {
+	// Simulates the fixed run.go flow: os.Environ() + env-file vars
+	// all filtered through the allowlist
+	cfg := &config.Config{Timeout: 5 * time.Minute}
+	p := NewPolicy(cfg)
+	p.EnvAllowlist = []string{"API_KEY", "HOME"}
+
+	// Simulate full env (os.Environ() + env-file + secrets)
+	fullEnv := map[string]string{
+		"HOME":           "/Users/test",
+		"PATH":           "/usr/bin",
+		"API_KEY":        "secret123",
+		"AWS_SECRET_KEY": "supersecret",
+		"DB_PASSWORD":    "dbpass",
+	}
+
+	result := p.ValidateEnv(fullEnv)
+
+	// Only allowed vars should pass through
+	assert.Equal(t, 2, len(result))
+	assert.Equal(t, "secret123", result["API_KEY"])
+	assert.Equal(t, "/Users/test", result["HOME"])
+	assert.NotContains(t, result, "PATH")
+	assert.NotContains(t, result, "AWS_SECRET_KEY")
+	assert.NotContains(t, result, "DB_PASSWORD")
+}
