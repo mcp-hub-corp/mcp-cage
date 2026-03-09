@@ -1,4 +1,4 @@
-project_name: mcp-client
+project_name: mcp-cage
 
 builds:
   - id: smcp
@@ -60,7 +60,7 @@ changelog:
 release:
   github:
     owner: mcp-hub-corp
-    name: mcp-client
+    name: mcp-cage
   draft: false
   prerelease: auto
   mode: replace
@@ -75,7 +75,7 @@ release:
 
     Or download the appropriate binary for your platform below.
   footer: |
-    **Full Changelog**: https://github.com/mcp-hub-corp/mcp-client/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/mcp-hub-corp/mcp-cage/compare/{{ .PreviousTag }}...{{ .Tag }}
 
 brews:
   - name: smcp

@@ -4,11 +4,11 @@
     <strong>Run MCP servers without blindly trusting them.</strong>
   </p>
   <p align="center">
-    <a href="https://github.com/mcp-hub-corp/mcp-client/actions"><img src="https://github.com/mcp-hub-corp/mcp-client/workflows/CI/badge.svg" alt="CI"></a>
-    <a href="https://goreportcard.com/report/github.com/mcp-hub-corp/mcp-client"><img src="https://goreportcard.com/badge/github.com/mcp-hub-corp/mcp-client" alt="Go Report Card"></a>
+    <a href="https://github.com/mcp-hub-corp/mcp-cage/actions"><img src="https://github.com/mcp-hub-corp/mcp-cage/workflows/CI/badge.svg" alt="CI"></a>
+    <a href="https://goreportcard.com/report/github.com/mcp-hub-corp/mcp-cage"><img src="https://goreportcard.com/badge/github.com/mcp-hub-corp/mcp-cage" alt="Go Report Card"></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
     <a href="go.mod"><img src="https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go&logoColor=white" alt="Go Version"></a>
-    <a href="https://github.com/mcp-hub-corp/mcp-client/releases"><img src="https://img.shields.io/github/v/release/mcp-hub-corp/mcp-client?color=orange" alt="Release"></a>
+    <a href="https://github.com/mcp-hub-corp/mcp-cage/releases"><img src="https://img.shields.io/github/v/release/mcp-hub-corp/mcp-cage?color=orange" alt="Release"></a>
     <a href="https://mcp-hub.info"><img src="https://img.shields.io/badge/ecosystem-MCP%20Hub%20Platform-blueviolet" alt="MCP Hub Platform"></a>
   </p>
 </p>
@@ -73,30 +73,30 @@ brew install mcp-hub-corp/tap/smcp
 
 ### Binary
 
-Download from [Releases](https://github.com/mcp-hub-corp/mcp-client/releases/latest):
+Download from [Releases](https://github.com/mcp-hub-corp/mcp-cage/releases/latest):
 
 ```bash
 # macOS (Apple Silicon)
-curl -sSL -o smcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/smcp_*_darwin_arm64.tar.gz
+curl -sSL -o smcp https://github.com/mcp-hub-corp/mcp-cage/releases/latest/download/smcp_*_darwin_arm64.tar.gz
 tar xzf smcp_*_darwin_arm64.tar.gz && sudo mv smcp /usr/local/bin/
 
 # macOS (Intel)
-curl -sSL -o smcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/smcp_*_darwin_amd64.tar.gz
+curl -sSL -o smcp https://github.com/mcp-hub-corp/mcp-cage/releases/latest/download/smcp_*_darwin_amd64.tar.gz
 tar xzf smcp_*_darwin_amd64.tar.gz && sudo mv smcp /usr/local/bin/
 
 # Linux (amd64)
-curl -sSL -o smcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/smcp_*_linux_amd64.tar.gz
+curl -sSL -o smcp https://github.com/mcp-hub-corp/mcp-cage/releases/latest/download/smcp_*_linux_amd64.tar.gz
 tar xzf smcp_*_linux_amd64.tar.gz && sudo mv smcp /usr/local/bin/
 
 # Linux (arm64)
-curl -sSL -o smcp https://github.com/mcp-hub-corp/mcp-client/releases/latest/download/smcp_*_linux_arm64.tar.gz
+curl -sSL -o smcp https://github.com/mcp-hub-corp/mcp-cage/releases/latest/download/smcp_*_linux_arm64.tar.gz
 tar xzf smcp_*_linux_arm64.tar.gz && sudo mv smcp /usr/local/bin/
 ```
 
 ### From source
 
 ```bash
-go install github.com/mcp-hub-corp/mcp-client/cmd/smcp@latest
+go install github.com/mcp-hub-corp/mcp-cage/cmd/smcp@latest
 ```
 
 ### Verify
