@@ -8,9 +8,9 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
-      - -X github.com/mcp-hub-corp/mcp-client/internal/cli.Version={{.Version}}
-      - -X github.com/mcp-hub-corp/mcp-client/internal/cli.GitCommit={{.Commit}}
-      - -X github.com/mcp-hub-corp/mcp-client/internal/cli.BuildDate={{.Date}}
+      - -X github.com/security-mcp/mcp-client/internal/cli.Version={{.Version}}
+      - -X github.com/security-mcp/mcp-client/internal/cli.GitCommit={{.Commit}}
+      - -X github.com/security-mcp/mcp-client/internal/cli.BuildDate={{.Date}}
     goos:
       - linux
       - darwin
