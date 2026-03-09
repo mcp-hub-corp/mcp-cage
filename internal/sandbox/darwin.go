@@ -10,8 +10,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/security-mcp/mcp-client/internal/manifest"
-	"github.com/security-mcp/mcp-client/internal/policy"
+	"github.com/mcp-hub-corp/mcp-cage/internal/manifest"
+	"github.com/mcp-hub-corp/mcp-cage/internal/policy"
 )
 
 func init() {

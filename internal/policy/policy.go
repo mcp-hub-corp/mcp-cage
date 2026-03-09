@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/security-mcp/mcp-client/internal/config"
-	"github.com/security-mcp/mcp-client/internal/manifest"
+	"github.com/mcp-hub-corp/mcp-cage/internal/config"
+	"github.com/mcp-hub-corp/mcp-cage/internal/manifest"
 )
 
 // Policy represents local security policy and execution limits

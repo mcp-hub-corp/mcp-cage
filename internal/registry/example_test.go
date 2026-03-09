@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/security-mcp/mcp-client/internal/registry"
+	"github.com/mcp-hub-corp/mcp-cage/internal/registry"
 )
 
 // Example of creating a registry client

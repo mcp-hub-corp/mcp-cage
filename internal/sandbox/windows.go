@@ -14,8 +14,8 @@ import (
 
 	"golang.org/x/sys/windows"
 
-	"github.com/security-mcp/mcp-client/internal/manifest"
-	"github.com/security-mcp/mcp-client/internal/policy"
+	"github.com/mcp-hub-corp/mcp-cage/internal/manifest"
+	"github.com/mcp-hub-corp/mcp-cage/internal/policy"
 )
 
 func init() {

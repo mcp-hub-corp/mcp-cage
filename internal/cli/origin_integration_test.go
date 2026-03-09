@@ -3,8 +3,8 @@ package cli
 import (
 	"testing"
 
-	"github.com/security-mcp/mcp-client/internal/config"
-	"github.com/security-mcp/mcp-client/internal/policy"
+	"github.com/mcp-hub-corp/mcp-cage/internal/config"
+	"github.com/mcp-hub-corp/mcp-cage/internal/policy"
 )
 
 // TestOriginPolicyIntegration validates that origin policy can be loaded from config

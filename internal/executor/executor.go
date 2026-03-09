@@ -11,10 +11,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/security-mcp/mcp-client/internal/manifest"
-	"github.com/security-mcp/mcp-client/internal/mcp"
-	"github.com/security-mcp/mcp-client/internal/policy"
-	"github.com/security-mcp/mcp-client/internal/sandbox"
+	"github.com/mcp-hub-corp/mcp-cage/internal/manifest"
+	"github.com/mcp-hub-corp/mcp-cage/internal/mcp"
+	"github.com/mcp-hub-corp/mcp-cage/internal/policy"
+	"github.com/mcp-hub-corp/mcp-cage/internal/sandbox"
 )
 
 // Executor defines the interface for executing MCP servers

@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"runtime"
 
-	"github.com/security-mcp/mcp-client/internal/manifest"
-	"github.com/security-mcp/mcp-client/internal/policy"
+	"github.com/mcp-hub-corp/mcp-cage/internal/manifest"
+	"github.com/mcp-hub-corp/mcp-cage/internal/policy"
 )
 
 // Sandbox provides resource isolation and limits for MCP processes

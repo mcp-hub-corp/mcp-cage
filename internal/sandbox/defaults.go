@@ -3,7 +3,7 @@ package sandbox
 import (
 	"time"
 
-	"github.com/security-mcp/mcp-client/internal/policy"
+	"github.com/mcp-hub-corp/mcp-cage/internal/policy"
 )
 
 // Mandatory default limits - NEVER execute without these

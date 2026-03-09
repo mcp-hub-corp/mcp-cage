@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/security-mcp/mcp-client/internal/config"
+	"github.com/mcp-hub-corp/mcp-cage/internal/config"
 )
 
 // TokenStorage handles token persistence

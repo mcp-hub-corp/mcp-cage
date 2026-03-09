@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/security-mcp/mcp-client/internal/hub"
-	"github.com/security-mcp/mcp-client/internal/manifest"
-	"github.com/security-mcp/mcp-client/internal/packaging"
+	"github.com/mcp-hub-corp/mcp-cage/internal/hub"
+	"github.com/mcp-hub-corp/mcp-cage/internal/manifest"
+	"github.com/mcp-hub-corp/mcp-cage/internal/packaging"
 	"github.com/spf13/cobra"
 )
 

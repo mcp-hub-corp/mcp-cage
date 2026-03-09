@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/security-mcp/mcp-client/internal/config"
+	"github.com/mcp-hub-corp/mcp-cage/internal/config"
 	"github.com/spf13/cobra"
 )
 

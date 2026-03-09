@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/security-mcp/mcp-client/internal/manifest"
+	"github.com/mcp-hub-corp/mcp-cage/internal/manifest"
 )
 
 // generateSBPLProfile creates a Seatbelt Profile Language (SBPL) file

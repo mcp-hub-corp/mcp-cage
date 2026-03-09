@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/security-mcp/mcp-client/internal/policy"
+	"github.com/mcp-hub-corp/mcp-cage/internal/policy"
 )
 
 func TestGetSafeDefaults(t *testing.T) {

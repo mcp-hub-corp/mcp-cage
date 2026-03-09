@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/security-mcp/mcp-client/internal/registry"
+	"github.com/mcp-hub-corp/mcp-cage/internal/registry"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )

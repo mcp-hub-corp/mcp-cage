@@ -6,7 +6,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/security-mcp/mcp-client/internal/sandbox"
+	"github.com/mcp-hub-corp/mcp-cage/internal/sandbox"
 )
 
 func runDoctor() error {

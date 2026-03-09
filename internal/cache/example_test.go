@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/security-mcp/mcp-client/internal/cache"
+	"github.com/mcp-hub-corp/mcp-cage/internal/cache"
 )
 
 // Example of creating and using a cache store

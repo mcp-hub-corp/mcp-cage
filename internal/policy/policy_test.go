@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/security-mcp/mcp-client/internal/config"
-	"github.com/security-mcp/mcp-client/internal/manifest"
+	"github.com/mcp-hub-corp/mcp-cage/internal/config"
+	"github.com/mcp-hub-corp/mcp-cage/internal/manifest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -1,4 +1,4 @@
-module github.com/security-mcp/mcp-client
+module github.com/mcp-hub-corp/mcp-cage
 
 go 1.24.0
 

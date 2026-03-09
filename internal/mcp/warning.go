@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/security-mcp/mcp-client/internal/manifest"
+	"github.com/mcp-hub-corp/mcp-cage/internal/manifest"
 )
 
 // SandboxContext describes the sandbox restrictions applied to the MCP server.

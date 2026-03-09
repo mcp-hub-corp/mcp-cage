@@ -8,7 +8,7 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/security-mcp/mcp-client/internal/cache"
+	"github.com/mcp-hub-corp/mcp-cage/internal/cache"
 	"github.com/spf13/cobra"
 )
 

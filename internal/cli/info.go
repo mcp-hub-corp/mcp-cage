@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/security-mcp/mcp-client/internal/cache"
-	"github.com/security-mcp/mcp-client/internal/registry"
+	"github.com/mcp-hub-corp/mcp-cage/internal/cache"
+	"github.com/mcp-hub-corp/mcp-cage/internal/registry"
 	"github.com/spf13/cobra"
 )
 
