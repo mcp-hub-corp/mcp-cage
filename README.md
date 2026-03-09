@@ -96,7 +96,7 @@ tar xzf smcp_*_linux_arm64.tar.gz && sudo mv smcp /usr/local/bin/
 ### From source
 
 ```bash
-go install github.com/mcp-hub-corp/mcp-cage/cmd/smcp@latest
+go install github.com/security-mcp/mcp-client/cmd/smcp@latest
 ```
 
 ### Verify
