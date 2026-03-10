@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-03-10
+
+### Fixed
+
+- **2026-03-10**: Fixed CI test failures in `TestBuildSandboxSuggestion`. Synced `buildSandboxSuggestion` messages with test expectations: generic errors now mention "restricted resource", AllFS/AllNet active cases now include "already fully granted" in the status message.
+
 ## [0.3.1] - 2026-03-03
 
 ### Added
