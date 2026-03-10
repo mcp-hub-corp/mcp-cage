@@ -357,9 +357,10 @@ func resolveHubMCP(hubBaseURL, owner, slug string) (org, name, version string, e
 					bestVersion = v
 				}
 			}
-			if bestVersion != nil && bestVersion.VisibleVersion != "" {
+			switch {
+			case bestVersion != nil && bestVersion.VisibleVersion != "":
 				version = bestVersion.VisibleVersion
-			} else if bestVersion != nil && bestVersion.CommitHash != "" {
+			case bestVersion != nil && bestVersion.CommitHash != "":
 				// Construct version from commit hash (same format as hub)
 				version = "commit-" + bestVersion.CommitHash[:7] + "-" + time.Now().Format("2006-01-02")
 			}

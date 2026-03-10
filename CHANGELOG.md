@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **2026-03-10**: Fixed remaining `ifElseChain` (gocritic) CI lint failures in Linux-only files:
+  - Converted 3-branch if-else-if chain in `internal/sandbox/linux.go` (`setupSandbox` network namespace section) to a `switch` statement. This was missed in the previous fix because the file has `//go:build linux` and was only linted in CI's Ubuntu runner, not locally on macOS.
+  - Converted 2-branch if-else-if chain in `internal/cli/pull.go` (`resolveHubMCP` version selection) to a `switch` statement as a preventive fix.
+
 - **2026-03-10**: Fixed all golangci-lint errors in `internal/mcp/proxy.go`, `internal/mcp/warning.go`, and `internal/mcp/warning_test.go`:
   - Converted if-else chains to switch statements in `buildSandboxSuggestion` (proxy.go), and in the network/environment access sections of `generateSandboxContextWarning` (warning.go) — resolves `ifElseChain` (gocritic) warnings.
   - Inverted two nested if conditions in `injectSandboxErrorInResult` to use early `continue` instead of deeply nested bodies — resolves `nestingReduce` (gocritic) warnings.

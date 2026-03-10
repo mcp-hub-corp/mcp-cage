@@ -151,15 +151,16 @@ func (s *LinuxSandbox) Apply(cmd *exec.Cmd, limits *policy.ExecutionLimits, perm
 
 	// OPTIONAL: Try network namespace if available (best-effort, documented if fails)
 	// Skip network isolation when --allow-all-net (AllNet) grants full network access
-	if perms != nil && perms.AllNet {
+	switch {
+	case perms != nil && perms.AllNet:
 		s.logger.Debug("network namespace skipped (--allow-all-net grants full network access)")
-	} else if s.canCreateNet {
+	case s.canCreateNet:
 		if err := s.setupNetworkNamespace(cmd); err != nil {
 			s.logger.Warn("network namespace setup failed", slog.String("error", err.Error()))
 		} else {
 			s.logger.Debug("network namespace enabled (default-deny network)")
 		}
-	} else if s.canUseUserNS {
+	case s.canUseUserNS:
 		// Fallback: use user namespaces for network isolation without root
 		setupUserNamespace(cmd)
 		s.logger.Debug("user namespace + network namespace enabled (non-root)")
