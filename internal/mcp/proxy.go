@@ -652,31 +652,31 @@ func buildSandboxSuggestion(blockedPath, errText string, ctx *SandboxContext) st
 	if blockedPath != "" {
 		if ctx != nil && ctx.AllFS {
 			fmt.Fprintf(&sb, "Action: Access file '%s'.\n", blockedPath)
-			sb.WriteString("Status: BLOCKED (despite --allow-fs). This may be due to OS-level protections.\n")
+			sb.WriteString("Status: BLOCKED. Filesystem access is already fully granted (--allow-fs). This may be due to OS-level protections.\n")
 		} else {
 			fmt.Fprintf(&sb, "Action: Write/Modify file '%s'.\n", blockedPath)
 			sb.WriteString("Status: BLOCKED by sandbox.\n")
 			sb.WriteString("Reason: The server does not have write permission for this path.\n")
 			sb.WriteString("Impact: Prevents unauthorized file modification or data exfiltration.\n")
-			
+
 			fmt.Fprintf(&sb, "\nIf you explicitly trust this server and want to allow this specific access, you can restart with:\n")
 			fmt.Fprintf(&sb, "  --allow-write %s\n", blockedPath)
 		}
 	} else if strings.Contains(errText, "network") || strings.Contains(errText, "connect") {
 		sb.WriteString("Action: Network connection.\n")
 		if ctx != nil && ctx.AllNet {
-			sb.WriteString("Status: FAILED (network is allowed via --allow-all-net). Likely a connectivity issue.\n")
+			sb.WriteString("Status: FAILED. Network access is already fully granted (--allow-all-net). Likely a connectivity issue.\n")
 		} else {
 			sb.WriteString("Status: BLOCKED by sandbox.\n")
 			sb.WriteString("Reason: Network access is disabled by default.\n")
 			sb.WriteString("Impact: Prevents unauthorized data transmission.\n")
-			
+
 			sb.WriteString("\nIf you explicitly trust this server and want to allow network access, you can restart with:\n")
 			sb.WriteString("  --allow-net <domain> (for specific domains)\n")
 			sb.WriteString("  --allow-all-net (for all network access)\n")
 		}
 	} else {
-		sb.WriteString("Action: Unknown restricted operation.\n")
+		sb.WriteString("Action: Attempted to access a restricted resource.\n")
 		sb.WriteString("Status: BLOCKED by sandbox.\n")
 	}
 
