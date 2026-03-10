@@ -1,5 +1,8 @@
 <p align="center">
-  <h1 align="center">smcp</h1>
+  <h1 align="center">MCP Cage</h1>
+  <p align="center">
+    <em>The MCP Sandbox</em>
+  </p>
   <p align="center">
     <strong>Run MCP servers without blindly trusting them.</strong>
   </p>
@@ -15,6 +18,14 @@
 
 ---
 
+**MCP Cage** is the execution sandbox for MCP servers — the runtime layer where upstream security certifications become hard enforcement. It verifies integrity, confines processes, and audits everything, so you never have to blindly trust the code you're running.
+
+> **Project:** MCP Cage &nbsp;·&nbsp; **CLI command:** `smcp`
+
+The binary is called `smcp` (short for *Secure MCP*). When you see `smcp` in this README, that's the command you type. When you see *MCP Cage*, that's the project and the sandbox it builds around every MCP server.
+
+---
+
 ## The problem
 
 Every time you run an MCP server, you're executing arbitrary code with your full system permissions:
@@ -26,9 +37,9 @@ npx @someone/mcp-tool     # Can it read your SSH keys? Yes.
 
 No verification. No limits. No sandboxing. No audit trail. For production environments connected to internal databases and APIs, this is an unacceptable risk.
 
-## What `smcp` does
+## What MCP Cage does
 
-`smcp` is a drop-in replacement for `uvx`/`npx` that adds the security layer they don't have:
+MCP Cage ships as `smcp` — a drop-in replacement for `uvx`/`npx` that adds the security layer they don't have:
 
 1. **Verifies** every package against its SHA-256 digest before execution
 2. **Sandboxes** processes with CPU, memory, network, and filesystem limits
@@ -38,7 +49,7 @@ No verification. No limits. No sandboxing. No audit trail. For production enviro
 
 Packages are analyzed upstream by [MCP Hub Platform](https://mcp-hub.info) for **14 classes of security vulnerabilities** and assigned a certification level (0-3) before they ever reach your machine.
 
-## `uvx`/`npx` vs `smcp`
+## `uvx`/`npx` vs `smcp` (MCP Cage)
 
 | | `uvx` / `npx` | `smcp` |
 |---|---|---|
