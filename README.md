@@ -16,6 +16,10 @@
   </p>
 </p>
 
+<p align="center">
+  <img src="docs/assets/mcp-cage-banner.png" alt="MCP Cage — The MCP Sandbox" width="100%">
+</p>
+
 ---
 
 **MCP Cage** is the execution sandbox for MCP servers — the runtime layer where upstream security certifications become hard enforcement. It verifies integrity, confines processes, and audits everything, so you never have to blindly trust the code you're running.
