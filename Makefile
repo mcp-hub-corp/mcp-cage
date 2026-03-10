@@ -7,9 +7,9 @@ BINARY=smcp
 VERSION ?= dev
 GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-LDFLAGS := -X github.com/security-mcp/mcp-client/internal/cli.Version=$(VERSION) \
-           -X github.com/security-mcp/mcp-client/internal/cli.GitCommit=$(GIT_COMMIT) \
-           -X github.com/security-mcp/mcp-client/internal/cli.BuildDate=$(BUILD_DATE)
+LDFLAGS := -X github.com/mcp-hub-corp/mcp-cage/internal/cli.Version=$(VERSION) \
+           -X github.com/mcp-hub-corp/mcp-cage/internal/cli.GitCommit=$(GIT_COMMIT) \
+           -X github.com/mcp-hub-corp/mcp-cage/internal/cli.BuildDate=$(BUILD_DATE)
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -71,11 +71,11 @@ all: fmt lint test build ## Run fmt, lint, test, and build
 
 docker-build: ## Build Docker image
 	@echo "Building Docker image..."
-	docker build -t mcp-client:latest .
+	docker build -t mcp-cage:latest .
 
 docker-run: docker-build ## Run mcp in Docker container
 	@echo "Running mcp in Docker..."
-	docker run --rm mcp-client:latest --version
+	docker run --rm mcp-cage:latest --version
 
 release-snapshot: ## Build release snapshot (requires goreleaser)
 	@echo "Building release snapshot..."

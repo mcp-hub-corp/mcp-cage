@@ -101,7 +101,7 @@ func NewAuthenticatedRequest(client *http.Client, token string) *AuthenticatedRe
 // Do executes an HTTP request with authentication headers
 func (ar *AuthenticatedRequest) Do(req *http.Request) (*http.Response, error) {
 	// Add User-Agent header
-	req.Header.Set("User-Agent", "mcp-client/1.0.0")
+	req.Header.Set("User-Agent", "mcp-cage/1.0.0")
 
 	// Add authorization header if token is available
 	if ar.authed && ar.token != "" {

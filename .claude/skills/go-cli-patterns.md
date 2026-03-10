@@ -2,7 +2,7 @@
 
 ## Overview
 
-This skill covers best practices for building command-line interfaces in Go using Cobra (CLI framework) and Viper (configuration management). Tailored to the mcp-client project: `smcp run`, `smcp pull`, `smcp cache`, etc.
+This skill covers best practices for building command-line interfaces in Go using Cobra (CLI framework) and Viper (configuration management). Tailored to the mcp-cage project: `smcp run`, `smcp pull`, `smcp cache`, etc.
 
 ---
 
@@ -39,7 +39,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "smcp",
 	Short: "MCP Client - launcher for Model Context Protocol servers",
-	Long: `mcp-client is a launcher for MCP servers.
+	Long: `mcp-cage is a launcher for MCP servers.
 
 It resolves, downloads, and executes MCP packages from a registry.`,
 	Version: "0.1.0",
@@ -643,7 +643,7 @@ Version is typically injected at build time:
 
 ```bash
 # Build with version
-go build -ldflags="-X github.com/security-mcp/mcp-client/cmd.Version=1.0.0" ./cmd/smcp
+go build -ldflags="-X github.com/security-mcp/mcp-cage/cmd.Version=1.0.0" ./cmd/smcp
 ```
 
 ### Setting Version in Code

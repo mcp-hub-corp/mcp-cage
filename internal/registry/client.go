@@ -433,7 +433,7 @@ func (c *Client) doRequest(ctx context.Context, method, endpoint string, body []
 	}
 
 	// Add standard headers
-	req.Header.Set("User-Agent", "mcp-client/1.0.0")
+	req.Header.Set("User-Agent", "mcp-cage/1.0.0")
 	if method == "POST" && body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}

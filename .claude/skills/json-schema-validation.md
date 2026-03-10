@@ -2,9 +2,9 @@
 
 ## Overview
 
-This skill covers validating JSON/YAML data against schemas in Go, with focus on the mcp-client project. Proper validation is critical for security (reject malformed manifests), user experience (clear validation errors), and reliability (ensure data integrity before use).
+This skill covers validating JSON/YAML data against schemas in Go, with focus on the mcp-cage project. Proper validation is critical for security (reject malformed manifests), user experience (clear validation errors), and reliability (ensure data integrity before use).
 
-**mcp-client context:** Manifests are JSON with strict schema requirements: package info, transport type, entrypoints with OS/arch, permissions, limits. Invalid manifests must be rejected with clear field-level errors.
+**mcp-cage context:** Manifests are JSON with strict schema requirements: package info, transport type, entrypoints with OS/arch, permissions, limits. Invalid manifests must be rejected with clear field-level errors.
 
 ---
 

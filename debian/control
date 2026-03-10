@@ -5,7 +5,7 @@ Maintainer: Dani <cr0hn@cr0hn.com>
 Build-Depends: debhelper-compat (= 13), golang-go (>= 2:1.22~)
 Standards-Version: 4.6.2
 Homepage: https://mcp-hub.info
-Vcs-Git: https://github.com/mcp-hub-corp/mcp-client.git
+Vcs-Git: https://github.com/mcp-hub-corp/mcp-cage.git
 Rules-Requires-Root: no
 
 Package: smcp

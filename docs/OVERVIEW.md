@@ -1,10 +1,10 @@
 # MCP-Client Overview
 
-mcp-client is a secure launcher/executor for MCP (Model Context Protocol) servers. It downloads, validates, and executes MCP packages from a compatible registry with lightweight security policies and resource isolation.
+mcp-cage is a secure launcher/executor for MCP (Model Context Protocol) servers. It downloads, validates, and executes MCP packages from a compatible registry with lightweight security policies and resource isolation.
 
-## What is mcp-client?
+## What is mcp-cage?
 
-**mcp-client** is a command-line tool that:
+**mcp-cage** is a command-line tool that:
 - Resolves immutable package references (`org/name@version`, `org/name@sha`, `org/name@digest`)
 - Downloads and validates manifests and bundles from a registry
 - Applies security policies (network allowlists, environment filtering, subprocess control)
@@ -12,7 +12,7 @@ mcp-client is a secure launcher/executor for MCP (Model Context Protocol) server
 - Executes MCP servers in isolated processes
 - Audits all executions locally
 
-## What mcp-client is NOT
+## What mcp-cage is NOT
 
 - **Not a container runtime**: No Docker, Kubernetes, or VM-level isolation (uses OS-level mechanisms)
 - **Not a package manager**: Does not manage dependencies or version resolution (registry handles that)
@@ -197,7 +197,7 @@ Command to execute for given OS/architecture:
 }
 ```
 
-mcp-client automatically selects the correct entrypoint based on runtime OS and CPU architecture.
+mcp-cage automatically selects the correct entrypoint based on runtime OS and CPU architecture.
 
 ### Transport
 
@@ -297,7 +297,7 @@ Response:
 
 ## Security Model (Lightweight)
 
-mcp-client implements **process-level isolation** (not VM-level):
+mcp-cage implements **process-level isolation** (not VM-level):
 
 ### Linux
 - **CPU/Memory Limits**: cgroups v2 + rlimits
@@ -375,8 +375,8 @@ mcp-client implements **process-level isolation** (not VM-level):
 
 ```bash
 # Build from source
-git clone https://github.com/security-mcp/mcp-client
-cd mcp-client
+git clone https://github.com/security-mcp/mcp-cage
+cd mcp-cage
 make build
 ./smcp --help
 

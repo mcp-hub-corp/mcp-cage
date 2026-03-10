@@ -2,9 +2,9 @@
 
 ## ⚠️ CRITICAL: Sandbox Limitations on macOS and Windows
 
-**Before deploying mcp-client in production, READ THIS:**
+**Before deploying mcp-cage in production, READ THIS:**
 
-mcp-client has **KNOWN CRITICAL LIMITATIONS** on macOS and Windows that allow malicious MCPs to bypass resource limits:
+mcp-cage has **KNOWN CRITICAL LIMITATIONS** on macOS and Windows that allow malicious MCPs to bypass resource limits:
 
 - **macOS:** Resource limits (CPU, memory, PIDs) are NOT enforced on child processes
 - **Windows:** Job Object limits are NOT applied (implementation bug)
@@ -55,7 +55,7 @@ Include the following information:
 
 ## Security Features
 
-mcp-client implements several security features:
+mcp-cage implements several security features:
 
 - **Digest validation**: All artifacts validated with SHA-256
 - **Resource limits**: CPU, memory, PID, FD limits per platform
@@ -77,4 +77,4 @@ See [docs/SECURITY.md](docs/SECURITY.md) for comprehensive threat model and plat
 3. Run on Linux for best isolation capabilities
 4. Enable audit logging in production
 5. Use restrictive policies
-6. Keep mcp-client updated to latest version
+6. Keep mcp-cage updated to latest version

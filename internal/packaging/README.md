@@ -20,7 +20,7 @@ package main
 
 import (
 	"log"
-	"github.com/security-mcp/mcp-client/internal/packaging"
+	"github.com/mcp-hub-corp/mcp-cage/internal/packaging"
 )
 
 func main() {

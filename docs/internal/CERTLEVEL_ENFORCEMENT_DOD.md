@@ -2,7 +2,7 @@
 
 **Status:** COMPLETE
 **Date:** 2026-01-19
-**Task:** Fase 4, Tarea 4.1 - Implementar enforcement de cert_level en mcp-client
+**Task:** Fase 4, Tarea 4.1 - Implementar enforcement de cert_level en mcp-cage
 
 ## DoD Checklist
 

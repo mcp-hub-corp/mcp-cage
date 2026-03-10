@@ -1,6 +1,6 @@
 # MCP-Client Skills Directory
 
-This directory contains comprehensive expert knowledge bases for implementing critical components of the mcp-client launcher.
+This directory contains comprehensive expert knowledge bases for implementing critical components of the mcp-cage launcher.
 
 ## Available Skills
 
@@ -17,13 +17,13 @@ Key topics:
 - Common bottlenecks: JSON parsing, crypto, disk I/O, network I/O
 - Optimization patterns: Buffer pooling, avoiding copies, string builder
 - Tools: go tool pprof, go tool trace, benchstat
-- Real examples from mcp-client: digest_bench_test.go, cache_bench_test.go
+- Real examples from mcp-cage: digest_bench_test.go, cache_bench_test.go
 - Goroutine leak detection with runtime.NumGoroutine()
 - CI/CD regression detection with benchstat
 
 **Use when:** Optimizing performance, profiling hot code, reducing allocations, comparing optimizations
 
-**Real code patterns from mcp-client:**
+**Real code patterns from mcp-cage:**
 - Cache put/get benchmarks with sync.Pool
 - Manifest parsing benchmarks with full workflow
 - Concurrent benchmark patterns with RunParallel
@@ -57,8 +57,8 @@ Key topics:
 
 ---
 
-#### 3. ci-cd-mcp-client.md (650 lines, 22 KB)
-**Expert knowledge for CI/CD automation specific to mcp-client**
+#### 3. ci-cd-mcp-cage.md (650 lines, 22 KB)
+**Expert knowledge for CI/CD automation specific to mcp-cage**
 
 Key topics:
 - GitHub Actions workflow design (CI, linting, build, release)
@@ -77,7 +77,7 @@ Key topics:
 
 **Use when:** Setting up CI/CD, fixing pipeline issues, optimizing build times, creating releases
 
-**Real workflows in mcp-client:**
+**Real workflows in mcp-cage:**
 - Test matrix: 3 OS × 2 Go versions = 6 parallel jobs
 - Coverage upload to codecov.io (ubuntu-latest, go 1.22 only)
 - Multi-platform binary build for releases
@@ -188,13 +188,13 @@ Key topics:
 
 ### Performance & Profiling Workflow
 
-When optimizing mcp-client:
+When optimizing mcp-cage:
 
 1. **Profile first** → Use **golang-performance.md** for pprof setup
 2. **Identify bottlenecks** → Analyze with go tool pprof and flamegraphs
 3. **Benchmark changes** → Write benchmarks with proper ResetTimer patterns
 4. **Compare results** → Use benchstat to quantify improvements
-5. **Track in CI** → Add benchmark regression tests (see ci-cd-mcp-client.md)
+5. **Track in CI** → Add benchmark regression tests (see ci-cd-mcp-cage.md)
 
 ### Production Troubleshooting Workflow
 
@@ -211,7 +211,7 @@ When debugging failures:
 
 When setting up automation:
 
-1. **Design matrix** → Use testing strategy from ci-cd-mcp-client.md
+1. **Design matrix** → Use testing strategy from ci-cd-mcp-cage.md
 2. **Configure linting** → Reference golangci-lint settings
 3. **Setup coverage** → Integrate codecov as shown
 4. **Create release** → Use goreleaser patterns for multi-platform builds
@@ -255,19 +255,19 @@ When reviewing:
 **golang-performance.md** connections:
 - **→ cache_bench_test.go**: Real benchmarks in project (PutManifest, GetBundle, List operations)
 - **→ manifest/parser_bench_test.go**: Real benchmarks (Parse, Validate, SelectEntrypoint)
-- **→ ci-cd-mcp-client.md**: Add benchmark regression detection to CI pipeline
+- **→ ci-cd-mcp-cage.md**: Add benchmark regression detection to CI pipeline
 - **→ debugging-production.md**: Use profiling output to diagnose slow operations
 
 ### Production Debugging Connections
 
 **debugging-production.md** connections:
-- **→ ci-cd-mcp-client.md**: Automated testing catches issues before production
+- **→ ci-cd-mcp-cage.md**: Automated testing catches issues before production
 - **→ golang-performance.md**: Profile when diagnosing performance issues
 - **→ smcp doctor**: First command to run (coverage in debugging-production.md)
 
 ### CI/CD Connections
 
-**ci-cd-mcp-client.md** connections:
+**ci-cd-mcp-cage.md** connections:
 - **→ golang-performance.md**: Add benchmark regression tests to CI matrix
 - **→ debugging-production.md**: CI logs help diagnose failures
 - **→ .golangci.yml**: Linting configuration (referenced in CI workflow)
@@ -315,7 +315,7 @@ When reviewing:
 
 ### Optimization & Tooling Skills
 - Go benchmarking patterns (pprof, benchstat)
-- Real benchmarks from mcp-client: cache_bench_test.go, manifest/parser_bench_test.go
+- Real benchmarks from mcp-cage: cache_bench_test.go, manifest/parser_bench_test.go
 - GitHub Actions CI/CD with matrix testing (3 OS × 2 Go versions)
 - golangci-lint v1.55+ configuration
 - goreleaser release automation

@@ -2,7 +2,7 @@
 
 ## ⚠️ CRITICAL SECURITY NOTICE
 
-The mcp-client sandbox has **KNOWN LIMITATIONS** on macOS and Windows that allow malicious MCPs to bypass resource limits.
+The mcp-cage sandbox has **KNOWN LIMITATIONS** on macOS and Windows that allow malicious MCPs to bypass resource limits.
 
 ---
 
@@ -102,7 +102,7 @@ The mcp-client sandbox has **KNOWN LIMITATIONS** on macOS and Windows that allow
 
 ## Comparison Matrix
 
-### mcp-client Implementation Status
+### mcp-cage Implementation Status
 
 | Feature | Linux | macOS | Windows |
 |---------|-------|-------|---------|
@@ -118,7 +118,7 @@ The mcp-client sandbox has **KNOWN LIMITATIONS** on macOS and Windows that allow
 | **Accurate Diagnostics** | ✅ Fixed | ✅ Accurate | ✅ Accurate |
 | **Production Ready** | ✅ YES | ⚠️ Partial (no resource limits) | ⚠️ Partial (no network isolation) |
 
-### OS-Level Mechanism Availability (Independent of mcp-client)
+### OS-Level Mechanism Availability (Independent of mcp-cage)
 
 | Feature | Linux | macOS | Windows |
 |---------|-------|-------|---------|

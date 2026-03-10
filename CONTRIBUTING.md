@@ -1,6 +1,6 @@
-# Contributing to mcp-client
+# Contributing to mcp-cage
 
-Thank you for your interest in contributing to mcp-client! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to mcp-cage! This document provides guidelines and instructions for contributing.
 
 ## Code of Conduct
 
@@ -50,8 +50,8 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 ### Building from Source
 
 ```bash
-git clone https://github.com/security-mcp/mcp-client.git
-cd mcp-client
+git clone https://github.com/mcp-hub-corp/mcp-cage.git
+cd mcp-cage
 make build
 ```
 
@@ -220,4 +220,4 @@ Contributors will be recognized in:
 - README.md contributors section
 - GitHub contributors page
 
-Thank you for contributing to mcp-client!
+Thank you for contributing to mcp-cage!

@@ -228,7 +228,7 @@ Based on benchmark results:
 ## Project Structure
 
 ```
-mcp-client/
+mcp-cage/
 ├── cmd/mcp/              # CLI entry point
 ├── internal/             # Core modules (8 modules)
 ├── docs/                 # Technical documentation (7 files)
@@ -260,7 +260,7 @@ Total: ~90 files, ~12,000 lines
 
 ## Repository
 
-- **GitHub**: https://github.com/security-mcp/mcp-client
+- **GitHub**: https://github.com/security-mcp/mcp-cage
 - **License**: MIT
 - **Language**: Go 1.21+
 - **Status**: Production Ready v1.0

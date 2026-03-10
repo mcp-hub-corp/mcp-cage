@@ -1,6 +1,6 @@
 # Filesystem Security: Safe File Operations
 
-This skill provides expert knowledge for secure filesystem operations in mcp-client.
+This skill provides expert knowledge for secure filesystem operations in mcp-cage.
 
 ## Security Threats
 
@@ -18,7 +18,7 @@ This skill provides expert knowledge for secure filesystem operations in mcp-cli
 3. **Verify containment**: Ensure final path is within allowed root directory
 4. **Detect symlinks**: Use `os.Lstat()` (not `os.Stat()`) to detect symlinks without following
 
-**mcp-client Implementation** (internal/cli/run.go - GOOD):
+**mcp-cage Implementation** (internal/cli/run.go - GOOD):
 ```go
 func isSafePath(basePath, targetPath string) bool {
     // 1. Normalize both paths
@@ -148,7 +148,7 @@ if fi.Mode()&os.ModeSymlink != 0 {
 }
 ```
 
-**mcp-client Current Implementation** (internal/cli/run.go - **MISSING**):
+**mcp-cage Current Implementation** (internal/cli/run.go - **MISSING**):
 The tar extraction doesn't explicitly handle `tar.TypeSymlink` or `tar.TypeLink`:
 ```go
 switch header.Typeflag {
@@ -199,7 +199,7 @@ tar -czf evil.tar.gz -C /tmp evil
 - **Restrictive permissions**: `0o600` (rw-------, owner only)
 - **Atomic rename**: Write to temp file, then atomic rename to final location (prevents partial reads)
 
-**mcp-client Implementation** (internal/cli/run.go):
+**mcp-cage Implementation** (internal/cli/run.go):
 ```go
 // GOOD: Using os.MkdirTemp() with random name
 tempDir, err := os.MkdirTemp("", "mcp-bundle-*")
@@ -288,7 +288,7 @@ smcp run test@1.0.0
 - **Public directories** (shared resources): `0o755` (rwxr-xr-x)
 - **Never use 0o777 or 0o666**: No world access for sensitive operations
 
-**Directory Hierarchy in mcp-client**:
+**Directory Hierarchy in mcp-cage**:
 ```
 ~/.smcp/                         0o700 (sensitive: cache, auth)
   cache/                        0o700
@@ -302,7 +302,7 @@ smcp run test@1.0.0
   lib/                          0o700
 ```
 
-**mcp-client Implementation** (internal/cache/store.go - GOOD):
+**mcp-cage Implementation** (internal/cache/store.go - GOOD):
 ```go
 // Create cache directories with restrictive permissions
 manifestDir := filepath.Join(baseDir, "manifests")
@@ -348,7 +348,7 @@ ls -la /tmp/mcp-bundle-*/
 - **Executables**: `0o755` (rwxr-xr-x) only when explicitly needed (NOT by default)
 - **Never extract with executable bit**: Force 0o600 on all extracted files
 
-**mcp-client Implementation** (internal/cli/run.go - GOOD):
+**mcp-cage Implementation** (internal/cli/run.go - GOOD):
 ```go
 // Extract files with restrictive permissions
 file, err := os.OpenFile(targetPath,
@@ -418,7 +418,7 @@ os.Rename(tempFile.Name(), targetPath)
 - **Locking**: Prevent concurrent modifications (use sync.RWMutex or file locks)
 - **Sync to disk**: `File.Sync()` forces kernel to write (prevents data loss on crash)
 
-**mcp-client Implementation** (internal/cache/store.go):
+**mcp-cage Implementation** (internal/cache/store.go):
 ```go
 func (s *Store) putArtifact(digest string, data []byte, kind string) error {
     // Generate target path
@@ -526,7 +526,7 @@ if _, err := os.Stat(path); err == nil {
 - **Fail on missing**: Don't check beforehand, fail on use (simpler)
 - **Inode comparison**: If must check, compare inode before and after
 
-**mcp-client Implementation**:
+**mcp-cage Implementation**:
 ```go
 // GOOD: Atomic open + read (no TOCTOU)
 func (s *Store) GetManifest(digest string) ([]byte, error) {
@@ -606,7 +606,7 @@ if err := checkDiskSpace(tempDir, extractionLimit); err != nil {
 }
 ```
 
-**Current mcp-client**: No explicit disk space check (relies on OS to fail if full)
+**Current mcp-cage**: No explicit disk space check (relies on OS to fail if full)
 
 ---
 
@@ -650,9 +650,9 @@ func secureDelete(filePath string) error {
 }
 ```
 
-**Current mcp-client**: No secure deletion (bundles are temporary, acceptable)
+**Current mcp-cage**: No secure deletion (bundles are temporary, acceptable)
 
-**Recommendation**: Not needed for mcp-client (bundles are re-downloadable), focus on access control instead.
+**Recommendation**: Not needed for mcp-cage (bundles are re-downloadable), focus on access control instead.
 
 ---
 
@@ -995,7 +995,7 @@ tar -czf evil.tar.gz file-with-execute-bit
 
 ---
 
-## Real Code: mcp-client Internal
+## Real Code: mcp-cage Internal
 
 ### cache/store.go
 ```go

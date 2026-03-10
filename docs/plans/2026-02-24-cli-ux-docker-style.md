@@ -94,7 +94,7 @@ func TestProgressUI_MultipleSteps(t *testing.T) {
 
 **Step 2: Run test to verify it fails**
 
-Run: `cd /Users/cr0hn/Dropbox/Projects/mcp-hub-platform/mcp-client && go test ./internal/cli/ -run TestProgressUI -v -count=1`
+Run: `cd /Users/cr0hn/Dropbox/Projects/mcp-hub-platform/mcp-cage && go test ./internal/cli/ -run TestProgressUI -v -count=1`
 Expected: FAIL - `NewProgressUI` not defined
 
 **Step 3: Implement `ProgressUI`**
@@ -510,7 +510,7 @@ func max(a, b int) int {
 
 **Step 4: Run tests to verify they pass**
 
-Run: `cd /Users/cr0hn/Dropbox/Projects/mcp-hub-platform/mcp-client && go test ./internal/cli/ -run TestProgressUI -v -count=1`
+Run: `cd /Users/cr0hn/Dropbox/Projects/mcp-hub-platform/mcp-cage && go test ./internal/cli/ -run TestProgressUI -v -count=1`
 Expected: PASS
 
 **Step 5: Commit**
@@ -639,12 +639,12 @@ Delete these functions from `run.go` (they are fully replaced by `ProgressUI.Inf
 
 **Step 4: Run all tests**
 
-Run: `cd /Users/cr0hn/Dropbox/Projects/mcp-hub-platform/mcp-client && go test ./internal/cli/ -v -count=1`
+Run: `cd /Users/cr0hn/Dropbox/Projects/mcp-hub-platform/mcp-cage && go test ./internal/cli/ -v -count=1`
 Expected: PASS (all existing tests + new tests)
 
 **Step 5: Build and verify**
 
-Run: `cd /Users/cr0hn/Dropbox/Projects/mcp-hub-platform/mcp-client && go build -o mcp ./cmd/mcp/`
+Run: `cd /Users/cr0hn/Dropbox/Projects/mcp-hub-platform/mcp-cage && go build -o mcp ./cmd/mcp/`
 Expected: Binary builds successfully
 
 **Step 6: Commit**

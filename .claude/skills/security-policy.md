@@ -1,6 +1,6 @@
 # Security Policy Enforcement Skill
 
-Expert knowledge for implementing and enforcing security policies in the mcp-client launcher.
+Expert knowledge for implementing and enforcing security policies in the mcp-cage launcher.
 
 ## Overview
 

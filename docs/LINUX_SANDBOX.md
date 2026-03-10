@@ -232,8 +232,8 @@ Examples:
 
 ```go
 import (
-    "github.com/security-mcp/mcp-client/internal/sandbox"
-    "github.com/security-mcp/mcp-client/internal/policy"
+    "github.com/security-mcp/mcp-cage/internal/sandbox"
+    "github.com/security-mcp/mcp-cage/internal/policy"
 )
 
 // Create sandbox
@@ -408,13 +408,13 @@ cat /proc/<pid>/limits | grep "CPU time"
 
 ## Available Mechanisms Not Yet Implemented
 
-The Linux kernel provides several additional sandboxing mechanisms that mcp-client does not currently use. These are documented here for completeness and to inform the roadmap.
+The Linux kernel provides several additional sandboxing mechanisms that mcp-cage does not currently use. These are documented here for completeness and to inform the roadmap.
 
 ### User Namespaces (`CLONE_NEWUSER`)
 
 **What it provides:** Allows an unprivileged process to create a new user namespace where it has UID 0 (root) _inside_ the namespace, mapped to its unprivileged UID _outside_. This enables creating other namespace types (network, PID, mount) without actual root.
 
-**Impact on mcp-client:** Currently, network namespace creation (`CLONE_NEWNET`) requires `CAP_NET_ADMIN` or root (`linux.go` checks `os.Geteuid() == 0`). With user namespaces, non-root users could get network isolation via:
+**Impact on mcp-cage:** Currently, network namespace creation (`CLONE_NEWNET`) requires `CAP_NET_ADMIN` or root (`linux.go` checks `os.Geteuid() == 0`). With user namespaces, non-root users could get network isolation via:
 ```go
 cmd.SysProcAttr = &syscall.SysProcAttr{
     Cloneflags: syscall.CLONE_NEWUSER | syscall.CLONE_NEWNET,
@@ -431,7 +431,7 @@ cmd.SysProcAttr = &syscall.SysProcAttr{
 
 **What it provides:** Filters system calls at the kernel level. A BPF program inspects each syscall and its arguments, returning allow/deny/kill decisions. Filters persist across `execve()` and are inherited by child processes.
 
-**Impact on mcp-client:**
+**Impact on mcp-cage:**
 - Block `fork()`/`clone()`/`execve()` for manifests declaring `subprocess: false`
 - Block dangerous syscalls (`ptrace`, `mount`, `reboot`, `kexec_load`)
 - Enforce fine-grained access control on syscall arguments
@@ -459,7 +459,7 @@ landlock_restrict_self(ruleset_fd, 0);
 - v3 (6.2): File truncation rules
 - v4 (6.7): **TCP bind and connect restrictions** (network sandboxing!)
 
-**Impact on mcp-client:** Provides filesystem isolation without root (alternative to mount namespaces). With ABI v4, also provides network restrictions without root.
+**Impact on mcp-cage:** Provides filesystem isolation without root (alternative to mount namespaces). With ABI v4, also provides network restrictions without root.
 
 **No root required.**
 
@@ -467,7 +467,7 @@ landlock_restrict_self(ruleset_fd, 0);
 
 **What it provides:** The child process becomes PID 1 in a new PID namespace. It can only see processes within its namespace. When PID 1 exits, all processes in the namespace are killed by the kernel.
 
-**Impact on mcp-client:**
+**Impact on mcp-cage:**
 - Process tree isolation: MCP server cannot see or signal other processes
 - Guaranteed cleanup: if PID 1 (the MCP server) dies, all its children are killed automatically
 - Fork bomb mitigation: combined with `pids.max` cgroup, provides robust process count control
@@ -484,7 +484,7 @@ landlock_restrict_self(ruleset_fd, 0);
 4. `pivot_root()` to the new root
 5. Unmount old root
 
-**Impact on mcp-client:** Stronger filesystem isolation than mount namespace alone. The MCP server literally cannot see the host filesystem outside the allowed paths.
+**Impact on mcp-cage:** Stronger filesystem isolation than mount namespace alone. The MCP server literally cannot see the host filesystem outside the allowed paths.
 
 **No real root required** (user namespace provides capabilities within the namespace).
 

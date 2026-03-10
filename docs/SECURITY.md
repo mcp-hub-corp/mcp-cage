@@ -1,6 +1,6 @@
 # Security Model
 
-mcp-client implements lightweight security controls to mitigate common threats when executing untrusted MCP packages. This document explains the threat model, security invariants, and platform-specific capabilities.
+mcp-cage implements lightweight security controls to mitigate common threats when executing untrusted MCP packages. This document explains the threat model, security invariants, and platform-specific capabilities.
 
 ---
 
@@ -8,7 +8,7 @@ mcp-client implements lightweight security controls to mitigate common threats w
 
 **Before reading further, understand these CRITICAL limitations:**
 
-mcp-client has documented sandbox bypass vulnerabilities on macOS and Windows. These are NOT theoretical - they are confirmed and exploitable:
+mcp-cage has documented sandbox bypass vulnerabilities on macOS and Windows. These are NOT theoretical - they are confirmed and exploitable:
 
 - **macOS:** Resource limits are NOT enforced on child processes
 - **Windows:** Job Object limits are NOT applied
@@ -84,7 +84,7 @@ mcp-client has documented sandbox bypass vulnerabilities on macOS and Windows. T
 - Requires kernel patching by system administrator
 
 #### 2. Runtime Interpreter Vulnerabilities
-- If MCP server uses Python 3.8 with CVE-2021-XXXXX, mcp-client cannot detect this
+- If MCP server uses Python 3.8 with CVE-2021-XXXXX, mcp-cage cannot detect this
 - Responsibility falls on:
   - Bundle maintainer to patch interpreter
   - System administrator to keep OS updated
@@ -96,17 +96,17 @@ mcp-client has documented sandbox bypass vulnerabilities on macOS and Windows. T
 - Covert channels (CPU cache, memory timing) are not blocked
 
 #### 4. Windows Network/Filesystem Isolation (Fixable)
-- mcp-client does not implement network or filesystem isolation on Windows
+- mcp-cage does not implement network or filesystem isolation on Windows
 - **However**, Windows provides AppContainers (kernel-enforced, no admin) and Process Mitigation Policies that CAN provide this isolation — they are not yet implemented
 - See [WINDOWS_SANDBOX.md](WINDOWS_SANDBOX.md) for available mechanisms
 
 #### 5. macOS Network/Filesystem Isolation (Fixable)
-- mcp-client does not implement network or filesystem isolation on macOS
+- mcp-cage does not implement network or filesystem isolation on macOS
 - **However**, macOS provides `sandbox-exec` / Seatbelt (kernel-enforced, no root) that CAN provide filesystem + network + process isolation — it is not yet implemented
 - See [MACOS_SANDBOX.md](MACOS_SANDBOX.md) for available mechanisms
 
 #### 6. Registry Compromise
-- If registry is hacked and serves signed artifacts, mcp-client trusts the digest
+- If registry is hacked and serves signed artifacts, mcp-cage trusts the digest
 - Requires registry-level security (TLS, access controls)
 - Audit logs can detect suspicious activity after the fact
 
@@ -166,7 +166,7 @@ FALLBACK: Terminate process if subprocess detected.
 ```
 RULE: Never execute as root/admin.
 ACTION: Refuse execution if running as root.
-RECOMMENDATION: Run mcp-client as regular user via sudo if needed.
+RECOMMENDATION: Run mcp-cage as regular user via sudo if needed.
 ```
 
 ## Platform-Specific Capabilities
@@ -566,7 +566,7 @@ Else:
 
 ## Security Best Practices
 
-1. **Keep mcp-client Updated**
+1. **Keep mcp-cage Updated**
    - Regularly update to get security fixes
    - Subscribe to security advisories
 
@@ -576,7 +576,7 @@ Else:
    - Review manifest before execution
 
 3. **Minimal Permissions**
-   - Run mcp-client as regular user, not root/admin
+   - Run mcp-cage as regular user, not root/admin
    - Grant only required network/filesystem access in manifest
    - Restrict environment variables to minimum necessary
 
@@ -598,7 +598,7 @@ Else:
 
 ## Reporting Security Issues
 
-If you discover a security vulnerability in mcp-client:
+If you discover a security vulnerability in mcp-cage:
 
 1. **Do NOT** open a public GitHub issue
 2. Email security details to: security@mcp-hub.info
@@ -617,7 +617,7 @@ We aim to respond within 48 hours and release patches promptly.
 
 ## Mandatory Default Limits
 
-**CRITICAL SECURITY FEATURE**: mcp-client ALWAYS applies resource limits, even if not configured.
+**CRITICAL SECURITY FEATURE**: mcp-cage ALWAYS applies resource limits, even if not configured.
 
 ### Default Limits (v1.0+)
 

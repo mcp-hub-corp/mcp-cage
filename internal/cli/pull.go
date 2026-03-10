@@ -307,7 +307,7 @@ func resolveHubMCP(hubBaseURL, owner, slug string) (org, name, version string, e
 	if err != nil {
 		return "", "", "", fmt.Errorf("creating hub API request: %w", err)
 	}
-	mcpReq.Header.Set("User-Agent", fmt.Sprintf("mcp-client/%s", Version))
+	mcpReq.Header.Set("User-Agent", fmt.Sprintf("mcp-cage/%s", Version))
 	mcpReq.Header.Set("Accept", "application/json")
 
 	mcpResp, err := http.DefaultClient.Do(mcpReq)
@@ -338,7 +338,7 @@ func resolveHubMCP(hubBaseURL, owner, slug string) (org, name, version string, e
 	if err != nil {
 		return "", "", "", fmt.Errorf("creating hub versions request: %w", err)
 	}
-	versionsReq.Header.Set("User-Agent", fmt.Sprintf("mcp-client/%s", Version))
+	versionsReq.Header.Set("User-Agent", fmt.Sprintf("mcp-cage/%s", Version))
 	versionsReq.Header.Set("Accept", "application/json")
 
 	versionsResp, err := http.DefaultClient.Do(versionsReq)

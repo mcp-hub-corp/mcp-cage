@@ -2,7 +2,7 @@
 
 ## Overview
 
-This skill covers comprehensive Go performance optimization techniques, profiling methodologies, and best practices applied to the mcp-client project. Focuses on CPU profiling, memory optimization, benchmark analysis, and production profiling.
+This skill covers comprehensive Go performance optimization techniques, profiling methodologies, and best practices applied to the mcp-cage project. Focuses on CPU profiling, memory optimization, benchmark analysis, and production profiling.
 
 **Key Areas:**
 - pprof profiling (CPU, memory, goroutines, mutex contention)
@@ -103,11 +103,11 @@ Common pprof CLI commands:
 
 ---
 
-## 2. CPU Profiling in mcp-client
+## 2. CPU Profiling in mcp-cage
 
 ### 2.1 Real Example: Manifest Parsing
 
-**Benchmark test location:** `/Users/cr0hn/Dropbox/Projects/mcp-client/internal/manifest/parser_bench_test.go`
+**Benchmark test location:** `/Users/cr0hn/Dropbox/Projects/mcp-cage/internal/manifest/parser_bench_test.go`
 
 ```go
 func BenchmarkParse(b *testing.B) {
@@ -147,7 +147,7 @@ func BenchmarkFullManifestWorkflow(b *testing.B) {
 
 ```bash
 # Run with CPU profile
-cd /Users/cr0hn/Dropbox/Projects/mcp-client
+cd /Users/cr0hn/Dropbox/Projects/mcp-cage
 go test -cpuprofile=cpu.prof -bench=BenchmarkParse -benchtime=10s ./internal/manifest
 
 # Analyze top functions
@@ -166,7 +166,7 @@ go tool pprof -http=:8080 cpu.prof
 
 ### 2.3 Real Example: Cache Operations
 
-**Benchmark location:** `/Users/cr0hn/Dropbox/Projects/mcp-client/internal/cache/cache_bench_test.go`
+**Benchmark location:** `/Users/cr0hn/Dropbox/Projects/mcp-cage/internal/cache/cache_bench_test.go`
 
 ```go
 func BenchmarkPutManifest_Small(b *testing.B) {
@@ -280,7 +280,7 @@ Example output:
 
 ### 3.3 Heap Profile in Code
 
-Add pprof endpoint to mcp-client for runtime profiling:
+Add pprof endpoint to mcp-cage for runtime profiling:
 
 ```go
 import _ "net/http/pprof"
@@ -435,7 +435,7 @@ Parse       2.1MB ± 0%     1.5MB ± 0%   -28.57%
 
 ---
 
-## 5. Common Bottlenecks in mcp-client
+## 5. Common Bottlenecks in mcp-cage
 
 ### 5.1 JSON Parsing Bottleneck
 
@@ -546,7 +546,7 @@ kcachegrind call.txt  # Requires kcachegrind
 
 ### 6.2 go tool trace
 
-Detailed execution trace (not in mcp-client yet):
+Detailed execution trace (not in mcp-cage yet):
 
 ```bash
 # Generate trace
@@ -592,7 +592,7 @@ benchstat baseline.txt optimized.txt
 ### 7.1 Profiling the Cache
 
 ```bash
-cd /Users/cr0hn/Dropbox/Projects/mcp-client
+cd /Users/cr0hn/Dropbox/Projects/mcp-cage
 
 # Benchmark all cache operations
 go test -cpuprofile=cpu.prof -memprofile=mem.prof \
@@ -669,7 +669,7 @@ go test -count=100 ./internal/cache  # Run multiple times
 
 ## 9. Profiling Checklist
 
-When optimizing mcp-client:
+When optimizing mcp-cage:
 
 - [ ] Enable CPU profiling for hot code paths
 - [ ] Analyze memory allocations with `-memprofile`

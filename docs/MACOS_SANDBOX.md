@@ -2,13 +2,13 @@
 
 ## Overview
 
-This document describes the sandboxing mechanisms available on macOS, what mcp-client currently implements, known bugs, and a roadmap for improvements.
+This document describes the sandboxing mechanisms available on macOS, what mcp-cage currently implements, known bugs, and a roadmap for improvements.
 
 **Current status: Only timeout enforcement works. All other controls are broken or not implemented.**
 
 ---
 
-## 1. Mechanisms macOS Provides (Independent of mcp-client)
+## 1. Mechanisms macOS Provides (Independent of mcp-cage)
 
 ### 1.1 sandbox-exec / Seatbelt (SBPL)
 
@@ -76,7 +76,7 @@ sandbox-exec -f profile.sb /path/to/binary
 
 **No root required.**
 
-### 1.4 Other macOS Mechanisms (Not Applicable to mcp-client)
+### 1.4 Other macOS Mechanisms (Not Applicable to mcp-cage)
 
 | Mechanism | Requires | Why Not Applicable |
 |-----------|----------|-------------------|
@@ -143,7 +143,7 @@ A minimal sandbox profile that restricts an MCP server to:
 
 ---
 
-## 3. What mcp-client Currently Implements
+## 3. What mcp-cage Currently Implements
 
 ### 3.1 darwin.go: Actual Behavior
 
@@ -166,7 +166,7 @@ A minimal sandbox profile that restricts an MCP server to:
 ```go
 // darwin.go:69-107 (approximate)
 func (s *DarwinSandbox) Apply(cmd *exec.Cmd, limits *policy.ExecutionLimits) error {
-    // BUG: These calls set limits on the PARENT (mcp-client) process,
+    // BUG: These calls set limits on the PARENT (mcp-cage) process,
     // NOT on the child process that cmd.Run() will spawn.
     _ = syscall.Setrlimit(syscall.RLIMIT_CPU, &syscall.Rlimit{
         Cur: cpuSeconds,
@@ -179,7 +179,7 @@ func (s *DarwinSandbox) Apply(cmd *exec.Cmd, limits *policy.ExecutionLimits) err
 **Why it's broken:**
 1. `syscall.Setrlimit()` modifies the **calling process's** limits
 2. Go's `exec.Cmd` on macOS does NOT have `SysProcAttr.Rlimits` (that field only exists on Linux)
-3. After `fork()` + `exec()`, the child inherits the parent's limits, but the parent is mcp-client itself — you're limiting mcp-client, not the MCP server
+3. After `fork()` + `exec()`, the child inherits the parent's limits, but the parent is mcp-cage itself — you're limiting mcp-cage, not the MCP server
 4. The child process gets system defaults (effectively unlimited)
 
 **Impact:**

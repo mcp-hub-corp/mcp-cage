@@ -2,9 +2,9 @@
 
 ## Overview
 
-This skill covers best practices for error handling in Go, tailored to the mcp-client project. Error handling is critical for security (never expose secrets), user experience (clear messages), and reliability (proper propagation and recovery).
+This skill covers best practices for error handling in Go, tailored to the mcp-cage project. Error handling is critical for security (never expose secrets), user experience (clear messages), and reliability (proper propagation and recovery).
 
-**mcp-client context:** Errors come from registry failures, digest validation, manifest parsing, sandbox setup, policy enforcement, and executor timeouts. Each error type must map to a specific exit code and user-facing message.
+**mcp-cage context:** Errors come from registry failures, digest validation, manifest parsing, sandbox setup, policy enforcement, and executor timeouts. Each error type must map to a specific exit code and user-facing message.
 
 ---
 
@@ -122,7 +122,7 @@ func resolveWithFallback(ref string) error {
 }
 ```
 
-### mcp-client Registry Sentinels
+### mcp-cage Registry Sentinels
 
 ```go
 // internal/registry/errors.go
@@ -211,7 +211,7 @@ if regErr := err.(*Error); regErr != nil { // WRONG! panics if nil
 }
 ```
 
-### mcp-client Custom Error Types
+### mcp-cage Custom Error Types
 
 ```go
 // internal/manifest/error.go
@@ -317,7 +317,7 @@ logger.Debug("token details", slog.String("token_prefix", redactedToken))
 Define exit codes for different error categories. Used in main.go or CLI root command.
 
 ```go
-// From mcp-client specification
+// From mcp-cage specification
 
 const (
 	ExitSuccess         = 0
@@ -856,7 +856,7 @@ if !validate(data) {
 
 ---
 
-## Real Code Examples: mcp-client Modules
+## Real Code Examples: mcp-cage Modules
 
 ### registry/client.go Error Handling
 

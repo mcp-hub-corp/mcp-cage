@@ -16,7 +16,7 @@ Implementar aislamiento y límites de recursos para procesos MCP en Linux. Usar 
    - Aplicar con `syscall.Setrlimit()` antes de `exec`
 
 2. **Cgroups v2 (si disponibles)**
-   - Crear cgroup en `/sys/fs/cgroup/mcp-client/<digest>/`
+   - Crear cgroup en `/sys/fs/cgroup/mcp-cage/<digest>/`
    - Límites: `cpu.max`, `memory.max`, `pids.max`
    - Mover proceso a cgroup con `echo $PID > cgroup.procs`
    - Cleanup: eliminar cgroup al terminar

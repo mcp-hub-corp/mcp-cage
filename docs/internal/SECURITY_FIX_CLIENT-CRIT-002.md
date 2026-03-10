@@ -87,7 +87,7 @@ Updated to reflect new behavior:
 
 ### Test Results
 ```bash
-$ cd mcp-client
+$ cd mcp-cage
 $ go test -v ./internal/packaging/
 
 === RUN   TestBundlerRejectsSymlinks
@@ -97,7 +97,7 @@ $ go test -v ./internal/packaging/
 
 # All 17 tests pass
 PASS
-ok  	github.com/security-mcp/mcp-client/internal/packaging	2.461s
+ok  	github.com/security-mcp/mcp-cage/internal/packaging	2.461s
 ```
 
 ### Build Status
@@ -117,7 +117,7 @@ $ go vet ./internal/packaging/
 ### Before Fix
 - **Risk:** HIGH - Attackers could exfiltrate sensitive files
 - **Attack Surface:** Any MCP source directory with symlinks
-- **Data at Risk:** Any file accessible to the user running mcp-client
+- **Data at Risk:** Any file accessible to the user running mcp-cage
 
 ### After Fix
 - **Risk:** NONE - Symlinks are completely rejected
@@ -173,5 +173,5 @@ If users need to include linked content, they should:
 
 - **Vulnerability ID:** CLIENT-CRIT-002
 - **Fix Date:** 2026-01-19
-- **Component:** mcp-client/internal/packaging/bundler
+- **Component:** mcp-cage/internal/packaging/bundler
 - **Security Level:** CRITICAL

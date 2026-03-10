@@ -62,7 +62,7 @@ Crear y mantener documentación completa del proyecto: guías de usuario, arquit
 
 1. **README.md en raíz del repo**
    ```markdown
-   # mcp-client
+   # mcp-cage
 
    Launcher de servidores MCP desde mcp-registry.
 
@@ -70,7 +70,7 @@ Crear y mantener documentación completa del proyecto: guías de usuario, arquit
 
    ```bash
    # Instalar
-   go install github.com/your-org/mcp-client/cmd/smcp@latest
+   go install github.com/your-org/mcp-cage/cmd/smcp@latest
 
    # Login (opcional)
    smcp login --token YOUR_TOKEN
@@ -109,9 +109,9 @@ Crear y mantener documentación completa del proyecto: guías de usuario, arquit
    ```markdown
    # Overview
 
-   ## Qué es mcp-client
+   ## Qué es mcp-cage
 
-   mcp-client es un launcher que descarga, valida y ejecuta servidores MCP desde un registry compatible (por defecto, mcp-registry).
+   mcp-cage es un launcher que descarga, valida y ejecuta servidores MCP desde un registry compatible (por defecto, mcp-registry).
 
    ## Conceptos clave
 
@@ -146,14 +146,14 @@ Crear y mantener documentación completa del proyecto: guías de usuario, arquit
 
    ## Relación con mcp-registry
 
-   mcp-client es un **consumidor** de mcp-registry. No es un registry en sí mismo.
+   mcp-cage es un **consumidor** de mcp-registry. No es un registry en sí mismo.
 
    El registry provee:
    - Endpoint `/resolve` para obtener digests de manifest/bundle
    - URLs de descarga (directas o presigned)
    - Autenticación (JWT Bearer)
 
-   mcp-client garantiza:
+   mcp-cage garantiza:
    - Validación de digest antes de ejecutar
    - Caché local para evitar re-downloads
    - Aplicación de políticas de seguridad del manifest
@@ -273,8 +273,8 @@ Crear y mantener documentación completa del proyecto: guías de usuario, arquit
    ## Setup
 
    ```bash
-   git clone https://github.com/your-org/mcp-client
-   cd mcp-client
+   git clone https://github.com/your-org/mcp-cage
+   cd mcp-cage
    go mod download
    ```
 
@@ -387,9 +387,9 @@ mkdocs build
 ### Badges para README
 
 ```markdown
-[![Build Status](https://github.com/your-org/mcp-client/workflows/CI/badge.svg)](https://github.com/your-org/mcp-client/actions)
-[![Coverage](https://codecov.io/gh/your-org/mcp-client/branch/main/graph/badge.svg)](https://codecov.io/gh/your-org/mcp-client)
-[![Go Report Card](https://goreportcard.com/badge/github.com/your-org/mcp-client)](https://goreportcard.com/report/github.com/your-org/mcp-client)
+[![Build Status](https://github.com/your-org/mcp-cage/workflows/CI/badge.svg)](https://github.com/your-org/mcp-cage/actions)
+[![Coverage](https://codecov.io/gh/your-org/mcp-cage/branch/main/graph/badge.svg)](https://codecov.io/gh/your-org/mcp-cage)
+[![Go Report Card](https://goreportcard.com/badge/github.com/your-org/mcp-cage)](https://goreportcard.com/report/github.com/your-org/mcp-cage)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ```
 

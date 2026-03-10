@@ -11,7 +11,7 @@ Key characteristics:
 - Base URL: `https://registry.example.com/v1` (configurable)
 - All artifact endpoints support both direct download and HTTP redirects
 - All responses include proper HTTP status codes and error details
-- Requires `User-Agent: mcp-client/<version>` header in all requests
+- Requires `User-Agent: mcp-cage/<version>` header in all requests
 
 ---
 
@@ -456,7 +456,7 @@ func NewRegistryClient(baseURL, token, version string) *RegistryClient {
     return &RegistryClient{
         baseURL:   strings.TrimSuffix(baseURL, "/"),
         token:     token,
-        userAgent: fmt.Sprintf("mcp-client/%s", version),
+        userAgent: fmt.Sprintf("mcp-cage/%s", version),
         httpClient: &http.Client{
             Timeout: 30 * time.Second,
             Transport: &http.Transport{

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This skill covers comprehensive testing strategies for security-critical applications, with emphasis on the mcp-client project's security invariants: input validation, digest verification, resource limits, and policy enforcement.
+This skill covers comprehensive testing strategies for security-critical applications, with emphasis on the mcp-cage project's security invariants: input validation, digest verification, resource limits, and policy enforcement.
 
 ---
 

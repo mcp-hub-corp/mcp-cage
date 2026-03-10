@@ -1,6 +1,6 @@
 # MCP-Client Architecture & Workflows
 
-Expert reference guide for understanding mcp-client system design, module interactions, and execution flows.
+Expert reference guide for understanding mcp-cage system design, module interactions, and execution flows.
 
 ## Table of Contents
 1. [Module Responsibilities](#module-responsibilities)
@@ -1449,7 +1449,7 @@ Exit Code: 2
 
 ---
 
-This skill document serves as the authoritative reference for mcp-client system design. When working on the project, consult this document for:
+This skill document serves as the authoritative reference for mcp-cage system design. When working on the project, consult this document for:
 
 - Where to make changes (which module owns which responsibility)
 - How data flows through the system

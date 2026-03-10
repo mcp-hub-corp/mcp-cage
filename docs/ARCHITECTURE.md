@@ -2,7 +2,7 @@
 
 ## System Overview
 
-mcp-client is a CLI tool that implements a secure launcher for MCP servers. It follows a layered architecture with clear separation of concerns.
+mcp-cage is a CLI tool that implements a secure launcher for MCP servers. It follows a layered architecture with clear separation of concerns.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -479,7 +479,7 @@ Serialized operations:
 ### Trust Boundaries
 
 **Trusted Components**:
-- mcp-client binary itself
+- mcp-cage binary itself
 - Configuration file (user-controlled)
 - Local policy settings
 - Registry (digest-verified)
@@ -602,10 +602,10 @@ smcp run org/name@1.0.0
 
 ```bash
 # Build image
-docker build -t mcp-client .
+docker build -t mcp-cage .
 
 # Run in container
-docker run --rm mcp-client run org/name@1.0.0
+docker run --rm mcp-cage run org/name@1.0.0
 ```
 
 ### CI/CD Integration
@@ -614,7 +614,7 @@ docker run --rm mcp-client run org/name@1.0.0
 # GitHub Actions
 - name: Run MCP tool
   run: |
-    curl -sSL https://github.com/security-mcp/mcp-client/releases/download/v1.0.0/smcp-linux-amd64 -o smcp
+    curl -sSL https://github.com/security-mcp/mcp-cage/releases/download/v1.0.0/smcp-linux-amd64 -o smcp
     chmod +x smcp
     ./smcp run org/tool@1.0.0
 ```

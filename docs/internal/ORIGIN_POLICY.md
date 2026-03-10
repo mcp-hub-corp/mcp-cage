@@ -2,7 +2,7 @@
 
 ## Overview
 
-The mcp-client now supports origin-based policy enforcement, allowing users to restrict which MCP packages can be executed based on their origin type.
+The mcp-cage now supports origin-based policy enforcement, allowing users to restrict which MCP packages can be executed based on their origin type.
 
 ## Origin Types
 

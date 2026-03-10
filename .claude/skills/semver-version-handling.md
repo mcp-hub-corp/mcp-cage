@@ -2,9 +2,9 @@
 
 ## Overview
 
-This skill covers semantic versioning (semver) in Go, with focus on the mcp-client project. Version handling is critical for package management (resolving `org/name@version` references), compatibility (MAJOR.MINOR.PATCH), and release workflows.
+This skill covers semantic versioning (semver) in Go, with focus on the mcp-cage project. Version handling is critical for package management (resolving `org/name@version` references), compatibility (MAJOR.MINOR.PATCH), and release workflows.
 
-**mcp-client context:** Package references use semver: `org/name@1.2.3`, `org/name@1.0.0-alpha`, `org/name@latest`. Version resolution, comparison, and range matching are core operations.
+**mcp-cage context:** Package references use semver: `org/name@1.2.3`, `org/name@1.0.0-alpha`, `org/name@latest`. Version resolution, comparison, and range matching are core operations.
 
 ---
 
@@ -980,7 +980,7 @@ func versionsEqual(a, b *Version) bool {
 
 ---
 
-## Real Code Examples: mcp-client Package References
+## Real Code Examples: mcp-cage Package References
 
 ### Parsing Package References
 

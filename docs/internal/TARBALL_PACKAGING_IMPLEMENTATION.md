@@ -7,7 +7,7 @@
 
 ## Resumen
 
-Se ha implementado un sistema completo y robusto de empaquetamiento tar.gz para mcp-client con soporte para:
+Se ha implementado un sistema completo y robusto de empaquetamiento tar.gz para mcp-cage con soporte para:
 - Bundles reproducibles (bit-for-bit determinísticos)
 - Protección contra path traversal
 - Protección contra decompression bombs
@@ -165,7 +165,7 @@ type BundleResult struct {
 
 PASS
 coverage: 74.0% of statements
-ok  	github.com/security-mcp/mcp-client/internal/packaging	4.413s
+ok  	github.com/security-mcp/mcp-cage/internal/packaging	4.413s
 ```
 
 **Total Tests:** 16
@@ -181,7 +181,7 @@ package main
 
 import (
     "log"
-    "github.com/security-mcp/mcp-client/internal/packaging"
+    "github.com/security-mcp/mcp-cage/internal/packaging"
 )
 
 func main() {

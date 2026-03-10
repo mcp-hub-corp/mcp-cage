@@ -4,7 +4,7 @@
 **architect**
 
 ## Misión
-Definir la arquitectura global del proyecto mcp-client, establecer interfaces entre módulos, contratos de datos y patrones de diseño. Garantizar que el código sea mantenible, testeable y extensible.
+Definir la arquitectura global del proyecto mcp-cage, establecer interfaces entre módulos, contratos de datos y patrones de diseño. Garantizar que el código sea mantenible, testeable y extensible.
 
 ## Responsabilidades
 

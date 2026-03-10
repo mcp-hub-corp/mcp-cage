@@ -10,7 +10,7 @@ Implementar el cliente HTTP para comunicarse con mcp-registry. Resolver referenc
 
 1. **Cliente HTTP base**
    - Configurar `http.Client` con timeouts, transport, TLS
-   - Headers obligatorios: `User-Agent: mcp-client/VERSION`
+   - Headers obligatorios: `User-Agent: mcp-cage/VERSION`
    - Support para proxy HTTP (respetar `HTTP_PROXY`, `HTTPS_PROXY`)
 
 2. **Endpoint `/v1/packages/:org/:name/resolve`**

@@ -1,6 +1,6 @@
 # HTTP Client Hardening: Secure Network Communication
 
-This skill provides expert knowledge for secure HTTP client implementation in mcp-client.
+This skill provides expert knowledge for secure HTTP client implementation in mcp-cage.
 
 ## Security Threats
 
@@ -18,7 +18,7 @@ This skill provides expert knowledge for secure HTTP client implementation in mc
 - **Always verify certificates**: `InsecureSkipVerify: false` (never disable in production)
 - **Prefer system cert store**: Use default CA verification (already includes system roots)
 
-**mcp-client Implementation** (internal/registry/client.go - **MISSING**, should add):
+**mcp-cage Implementation** (internal/registry/client.go - **MISSING**, should add):
 ```go
 import "crypto/tls"
 
@@ -51,7 +51,7 @@ func createSecureHTTPClient(timeout time.Duration) *http.Client {
 }
 ```
 
-**Current mcp-client** (internal/registry/client.go):
+**Current mcp-cage** (internal/registry/client.go):
 ```go
 // Creates clients but does NOT explicitly configure TLS
 // Relies on Go defaults (which ARE secure: TLS 1.2+ minimum)
@@ -73,7 +73,7 @@ apiClient := &http.Client{
 
 **When to use**:
 - High-security deployments (defense-in-depth)
-- Registry operator controls mcp-client config (static pins)
+- Registry operator controls mcp-cage config (static pins)
 - NOT recommended for public OSS (pins break on cert renewal)
 
 **Implementation** (optional enhancement):
@@ -124,12 +124,12 @@ func createPinnedHTTPClient(registryHost string, pinnedCertSHA256 string) (*http
 //   openssl x509 -outform DER | openssl dgst -sha256 -hex
 ```
 
-**Recommendation for mcp-client**: NOT IMPLEMENTED (keep simple, trust system CAs)
+**Recommendation for mcp-cage**: NOT IMPLEMENTED (keep simple, trust system CAs)
 
 ---
 
 ### 3. Timeout Strategy
-**Threat**: Slow/hanging registry causes mcp-client to block indefinitely, hangs container/CI/process.
+**Threat**: Slow/hanging registry causes mcp-cage to block indefinitely, hangs container/CI/process.
 
 **Scenarios**:
 - Registry is slow (network issue, overloaded)
@@ -151,7 +151,7 @@ func createPinnedHTTPClient(registryHost string, pinnedCertSHA256 string) (*http
    Best strategy: use context.WithTimeout() for total timeout
 ```
 
-**mcp-client Implementation** (internal/registry/client.go - GOOD):
+**mcp-cage Implementation** (internal/registry/client.go - GOOD):
 ```go
 const (
     DefaultAPITimeout = 30 * time.Second      // For resolve, metadata
@@ -223,7 +223,7 @@ curl --max-time 5 http://localhost:8080
 - **IdleConnTimeout**: 90s (close idle after 90s)
 - **DisableKeepAlives**: false (reuse is good for performance)
 
-**mcp-client Implementation** (internal/registry/client.go - **MISSING**, relies on defaults):
+**mcp-cage Implementation** (internal/registry/client.go - **MISSING**, relies on defaults):
 ```go
 transport := &http.Transport{
     // Connection pooling limits
@@ -280,7 +280,7 @@ func Resolve(ctx context.Context, baseURL string, org string) {
 }
 ```
 
-**mcp-client Implementation** (internal/registry/client.go - GOOD):
+**mcp-cage Implementation** (internal/registry/client.go - GOOD):
 ```go
 // Resolve() accepts ctx and propagates to HTTP call
 func (c *Client) Resolve(ctx context.Context, org, name, ref string) (*ResolveResponse, error) {
@@ -363,7 +363,7 @@ data, err := client.FetchData(ctx)
 - **Validate redirect URL**: Ensure still HTTPS (no protocol downgrade)
 - **Log redirects**: Audit where traffic goes
 
-**mcp-client Implementation** (internal/registry/client.go - GOOD):
+**mcp-cage Implementation** (internal/registry/client.go - GOOD):
 ```go
 const MaxRedirects = 10
 
@@ -431,13 +431,13 @@ CheckRedirect: func(req *http.Request, via []*http.Request) error {
 **Threat**: Missing or malformed headers leak client identity or fail authentication.
 
 **Headers**:
-- **User-Agent**: Identifies client (e.g., `mcp-client/1.0.0`)
+- **User-Agent**: Identifies client (e.g., `mcp-cage/1.0.0`)
 - **Authorization**: Auth token (must not leak in logs)
 - **Accept**: Desired response format
 - **Content-Type**: Request body format
 - **Host**: Required by HTTP/1.1
 
-**mcp-client Implementation** (internal/registry/auth.go):
+**mcp-cage Implementation** (internal/registry/auth.go):
 ```go
 // Add Authorization header if token is set
 func (c *Client) addAuthHeader(req *http.Request) {
@@ -456,7 +456,7 @@ if err != nil {
 }
 
 // Add standard headers
-req.Header.Set("User-Agent", fmt.Sprintf("mcp-client/%s", version))  // ✓ Good
+req.Header.Set("User-Agent", fmt.Sprintf("mcp-cage/%s", version))  // ✓ Good
 req.Header.Set("Accept", "application/json")                         // ✓ Good
 
 // Add auth if present
@@ -475,7 +475,7 @@ func (c *Client) newRequest(ctx context.Context, method, urlStr string) (*http.R
     }
 
     // Set standard headers
-    req.Header.Set("User-Agent", fmt.Sprintf("mcp-client/%s", UserAgentVersion))
+    req.Header.Set("User-Agent", fmt.Sprintf("mcp-cage/%s", UserAgentVersion))
     req.Header.Set("Accept", "application/json")
 
     // Set auth if present
@@ -511,7 +511,7 @@ req.Header.Set("Authorization", "Bearer "+token)
 - **Content-Length**: Validate claimed size before reading (prevents resource exhaustion)
 - **Body size**: Limit body read to MaxManifestSize/MaxBundleSize
 
-**mcp-client Implementation** (internal/registry/client.go - PARTIAL):
+**mcp-cage Implementation** (internal/registry/client.go - PARTIAL):
 ```go
 const (
     MaxManifestSize = 10 * 1024 * 1024    // 10 MB
@@ -603,7 +603,7 @@ Attempt 4: 4s + jitter (max 8s)
 Total max time: 15s for API calls
 ```
 
-**mcp-client Implementation** (internal/registry/client.go - **MISSING**, could add):
+**mcp-cage Implementation** (internal/registry/client.go - **MISSING**, could add):
 ```go
 const (
     MaxRetries = 3
@@ -705,7 +705,7 @@ NON-RETRYABLE (fail immediately):
   - TLS certificate error
 ```
 
-**mcp-client Implementation** (internal/registry/errors.go - already has error types):
+**mcp-cage Implementation** (internal/registry/errors.go - already has error types):
 ```go
 // IsRetryable checks if an error is retryable
 func IsRetryable(err error) bool {
@@ -872,7 +872,7 @@ func (c *Client) newRequest(ctx context.Context, method, urlStr string) (*http.R
     }
 
     // Set standard headers
-    req.Header.Set("User-Agent", "mcp-client/1.0.0")
+    req.Header.Set("User-Agent", "mcp-cage/1.0.0")
     req.Header.Set("Accept", "application/json")
 
     // Add auth token if present

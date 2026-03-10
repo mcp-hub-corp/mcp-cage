@@ -2,7 +2,7 @@
 
 ## Overview
 
-This skill covers debugging mcp-client in production and development environments. Includes common error scenarios, diagnostic workflows, log analysis, and practical troubleshooting techniques.
+This skill covers debugging mcp-cage in production and development environments. Includes common error scenarios, diagnostic workflows, log analysis, and practical troubleshooting techniques.
 
 **Key Areas:**
 - Common error messages and interpretation
@@ -17,7 +17,7 @@ This skill covers debugging mcp-client in production and development environment
 
 ## 1. Error Messages & Exit Codes
 
-### 1.1 mcp-client Exit Codes
+### 1.1 mcp-cage Exit Codes
 
 ```bash
 # Exit code 0: Success
@@ -886,7 +886,7 @@ $ smcp run acme/memory-hog@1.0.0  # ✓ Works
 
 ## 10. Debugging Checklist
 
-When troubleshooting mcp-client:
+When troubleshooting mcp-cage:
 
 - [ ] Check exit code and error message
 - [ ] Enable debug logging (`--log-level debug`)
@@ -910,7 +910,7 @@ When troubleshooting mcp-client:
 ```bash
 # Basic debugging
 smcp doctor                           # Check system capabilities
-smcp --version                        # Check mcp-client version
+smcp --version                        # Check mcp-cage version
 
 # Logging
 export MCP_LOG_LEVEL=debug          # Enable debug logs

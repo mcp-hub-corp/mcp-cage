@@ -24,7 +24,7 @@ func init() {
 // DarwinSandbox provides process isolation on macOS using sandbox-exec (seatbelt).
 //
 // Previous implementation used syscall.Setrlimit which is a BUG: Setrlimit applies
-// to the PARENT process (mcp-client itself), not the child. macOS SysProcAttr does
+// to the PARENT process (mcp-cage itself), not the child. macOS SysProcAttr does
 // not have an Rlimits field like Linux.
 //
 // The correct approach is to use sandbox-exec with SBPL profiles, which provides:

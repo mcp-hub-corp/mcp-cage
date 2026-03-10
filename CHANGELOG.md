@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **2026-02-26**: Fixed missed `mcp` → `smcp` references in `.claude/` agent and skill files (26 files total). Changed `~/.mcp/` → `~/.smcp/` config/cache/audit paths, CLI command references (`mcp run` → `smcp run`, `mcp doctor` → `smcp doctor`, etc.), Cobra `Use: "mcp"` → `Use: "smcp"`, build targets `cmd/mcp` → `cmd/smcp`, cgroup names, and binary references (`./mcp` → `./smcp`). Preserved MCP protocol name, `mcp-client` project name, `MCP_*` env vars, and Go import paths.
+- **2026-02-26**: Fixed missed `mcp` → `smcp` references in `.claude/` agent and skill files (26 files total). Changed `~/.mcp/` → `~/.smcp/` config/cache/audit paths, CLI command references (`mcp run` → `smcp run`, `mcp doctor` → `smcp doctor`, etc.), Cobra `Use: "mcp"` → `Use: "smcp"`, build targets `cmd/mcp` → `cmd/smcp`, cgroup names, and binary references (`./mcp` → `./smcp`). Preserved MCP protocol name, `mcp-cage` project name, `MCP_*` env vars, and Go import paths.
 
 ### Added
 
@@ -101,7 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Initial release of mcp-client
+- Initial release of mcp-cage
 - CLI commands: run, pull, info, login, logout, cache, doctor
 - Registry integration with authentication (Bearer, Token, Basic)
 - Content-addressable cache with atomic operations
@@ -140,5 +140,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contributing guidelines
 - Code of Conduct
 
-[Unreleased]: https://github.com/security-mcp/mcp-client/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/security-mcp/mcp-client/releases/tag/v1.0.0
+[Unreleased]: https://github.com/mcp-hub-corp/mcp-cage/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/mcp-hub-corp/mcp-cage/releases/tag/v1.0.0

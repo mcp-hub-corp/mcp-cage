@@ -66,7 +66,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
         echo "This script will create the orig tarball, then you need to run the"
         echo "Debian packaging step inside Docker or on an Ubuntu machine."
         echo ""
-        echo "Quick Docker option (run from mcp-client/):"
+        echo "Quick Docker option (run from mcp-cage/):"
         echo "  docker run --rm -it \\"
         echo "    -v \$(pwd):/src \\"
         echo "    -v ~/.gnupg:/root/.gnupg \\"

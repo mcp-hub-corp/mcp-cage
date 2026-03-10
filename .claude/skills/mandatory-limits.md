@@ -1,6 +1,6 @@
 # Mandatory Limit Enforcement
 
-Expert reference guide for resource limit enforcement across all layers of mcp-client. This is a CRITICAL security document.
+Expert reference guide for resource limit enforcement across all layers of mcp-cage. This is a CRITICAL security document.
 
 ## Table of Contents
 1. [Security Invariant (CRITICAL)](#security-invariant-critical)
@@ -20,7 +20,7 @@ Expert reference guide for resource limit enforcement across all layers of mcp-c
 
 ### NEVER Execute Without Limits
 
-This is the most important rule in mcp-client.
+This is the most important rule in mcp-cage.
 
 **Rule:** Every process execution MUST have limits applied, with NO exceptions.
 

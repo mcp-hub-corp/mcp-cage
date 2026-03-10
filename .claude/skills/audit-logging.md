@@ -1,6 +1,6 @@
 # Audit Logging Skill
 
-Expert knowledge for implementing comprehensive security audit logging in the mcp-client launcher.
+Expert knowledge for implementing comprehensive security audit logging in the mcp-cage launcher.
 
 ## Overview
 

@@ -1,15 +1,16 @@
-# MCP-CLIENT
+# MCP-CAGE
+> The MCP Sandbox
 
 ## Project Identity and Ecosystem Context
 
-**mcp-client** is the execution plane of **MCP Hub Platform** — a trust infrastructure for publishing, certifying, and running MCP (Model Context Protocol) servers in a predictable, auditable, and governable way.
+**mcp-cage** is the execution plane of **MCP Hub Platform** — a trust infrastructure for publishing, certifying, and running MCP (Model Context Protocol) servers in a predictable, auditable, and governable way.
 
 The platform is built as a pipeline of four components:
 
 1. **mcp-hub** (Control Plane) — Ingests MCP server source code, orchestrates security analysis, computes deterministic certification scores, publishes certified artifacts
 2. **mcp-scan** (Analysis Engine) — Static security analyzer that detects 14 vulnerability classes (A-N) using pattern matching, taint analysis, and optional AI detection
 3. **mcp-registry** (Data Plane) — Content-addressed artifact distribution with SHA-256 integrity, JWT auth, and scope-based authorization
-4. **mcp-client** (Execution Plane) — **This repository.** The last mile of the pipeline — where all upstream certification materializes as runtime enforcement
+4. **mcp-cage** (Execution Plane) — **This repository.** The last mile of the pipeline — where all upstream certification materializes as runtime enforcement
 
 The client is where trust becomes real. The hub can analyze, score, and certify all day — but none of that matters if the execution layer does not validate digests, enforce policies, sandbox processes, and log everything. This component is responsible for half of the platform's security guarantees.
 
@@ -32,7 +33,7 @@ MCP Hub Platform solves this with an automated pipeline:
 2. mcp-scan analyzes it for 14 classes of vulnerabilities (injection, data exfiltration, privilege escalation, etc.)
 3. Hub computes a deterministic score (0-100) and maps it to a certification level (0-3)
 4. Certified artifact is published to mcp-registry with immutable SHA-256 digest
-5. **mcp-client resolves, validates, enforces policy, sandboxes, and audits the execution**
+5. **mcp-cage resolves, validates, enforces policy, sandboxes, and audits the execution**
 
 This client is responsible for steps 5 — the runtime enforcement half of the security model. Every invariant below exists because without it, the upstream certification would be meaningless.
 
@@ -81,7 +82,7 @@ Developer
     ^
     |  resolve + download + validate
     |
-[mcp-client]  ── policy check → sandbox → execute → audit
+[mcp-cage]  ── policy check → sandbox → execute → audit
 ```
 
 Step by step:
@@ -94,7 +95,7 @@ Step by step:
 6. **Hub publishes** manifest + bundle to mcp-registry with cert_level metadata and immutable SHA-256 digest
 7. **Client resolves** the package reference, downloads manifest and bundle, validates SHA-256 digests, checks organizational policy (min cert_level, allowed origins), applies sandbox, executes, and writes audit log
 
-When modifying client code, remember: the cert_level, origin, and digest metadata this client consumes were produced by the upstream pipeline. The client trusts the registry's digest but validates it independently. The client enforces policy based on cert_level but does not recompute it.
+When modifying mcp-cage code, remember: the cert_level, origin, and digest metadata this client consumes were produced by the upstream pipeline. The client trusts the registry's digest but validates it independently. The client enforces policy based on cert_level but does not recompute it.
 
 ---
 
@@ -276,7 +277,7 @@ Tests include unit, integration, benchmark, fuzz, and E2E tests. Platform-specif
 
 - Linux sandbox tests require root or cgroups v2 delegation; skip with `-short` flag if unavailable
 - macOS and Windows cannot provide network isolation; `smcp doctor` reports these limitations
-- Binary name is `smcp` (not `mcp-client`); built to `./smcp` by default
+- Binary name is `smcp` (not `mcp-cage`); built to `./smcp` by default
 - Registry must be running and accessible for `pull`/`run` commands to work
 - Auth tokens stored in `~/.smcp/auth.json` with 0600 perms; token expiry is not auto-refreshed
 - `push` command is hidden/disabled — the code exists but is not registered in the CLI

@@ -60,7 +60,7 @@ org/name@1.2.x
 ```
 
 **What happens:**
-1. mcp-client sends to registry: `/resolve?ref=1.2.3`
+1. mcp-cage sends to registry: `/resolve?ref=1.2.3`
 2. Registry returns: Manifest digest, Bundle digest, URLs
 3. Client caches by digest (immutable from now on)
 
@@ -890,7 +890,7 @@ Rate limit (429):
 GET /v1/artifacts/sha256:abc123/manifest HTTP/1.1
 Host: registry.mcp-hub.info
 Authorization: Bearer <token>
-User-Agent: mcp-client/0.1.0 (linux/amd64)
+User-Agent: mcp-cage/0.1.0 (linux/amd64)
 Accept: application/json
 If-None-Match: "sha256:abc123..."
 ```

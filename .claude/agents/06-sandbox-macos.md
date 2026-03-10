@@ -133,7 +133,7 @@ Implementar límites de recursos para procesos MCP en macOS. Dado que macOS care
    - **Subprocess blocking**: Cannot block fork/exec without kernel extension.
    - **Filesystem sandbox**: No bind mounts. Only UNIX permissions.
 
-   **Recommendation**: For strict security requirements, run mcp-client in a Linux VM or container on macOS.
+   **Recommendation**: For strict security requirements, run mcp-cage in a Linux VM or container on macOS.
    ```
 
 ## Definition of Done

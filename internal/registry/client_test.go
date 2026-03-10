@@ -650,7 +650,7 @@ func TestParseDigest(t *testing.T) {
 func TestUserAgent(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userAgent := r.Header.Get("User-Agent")
-		assert.Equal(t, "mcp-client/1.0.0", userAgent)
+		assert.Equal(t, "mcp-cage/1.0.0", userAgent)
 
 		json.NewEncoder(w).Encode(map[string]interface{}{})
 	}))

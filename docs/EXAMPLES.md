@@ -1,6 +1,6 @@
 # Usage Examples
 
-This document provides practical examples of using mcp-client for different scenarios.
+This document provides practical examples of using mcp-cage for different scenarios.
 
 ## Basic Usage
 
@@ -334,9 +334,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Download mcp-client
+      - name: Download mcp-cage
         run: |
-          curl -sSL https://github.com/security-mcp/mcp-client/releases/download/v1.0.0/smcp-linux-amd64 \
+          curl -sSL https://github.com/security-mcp/mcp-cage/releases/download/v1.0.0/smcp-linux-amd64 \
             -o /usr/local/bin/smcp
           chmod +x /usr/local/bin/smcp
 
@@ -360,8 +360,8 @@ jobs:
 ```dockerfile
 FROM golang:1.21
 
-# Download mcp-client
-RUN curl -sSL https://github.com/security-mcp/mcp-client/releases/download/v1.0.0/smcp-linux-amd64 \
+# Download mcp-cage
+RUN curl -sSL https://github.com/security-mcp/mcp-cage/releases/download/v1.0.0/smcp-linux-amd64 \
     -o /usr/local/bin/smcp && chmod +x /usr/local/bin/smcp
 
 # Pre-download packages

@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Documentation
-    url: https://github.com/security-mcp/mcp-client/tree/main/docs
+    url: https://github.com/mcp-hub-corp/mcp-cage/tree/main/docs
     about: Check the documentation for usage guides and examples
   - name: Discussions
-    url: https://github.com/security-mcp/mcp-client/discussions
+    url: https://github.com/mcp-hub-corp/mcp-cage/discussions
     about: Ask questions and discuss ideas with the community

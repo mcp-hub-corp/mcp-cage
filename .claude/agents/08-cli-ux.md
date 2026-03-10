@@ -53,7 +53,7 @@ Implementar la interfaz de línea de comandos (CLI) del launcher con una UX clar
 
    import (
        "github.com/spf13/cobra"
-       "mcp-client/internal/cli"
+       "mcp-cage/internal/cli"
    )
 
    func main() {

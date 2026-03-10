@@ -2,7 +2,7 @@
 
 ## Overview
 
-This skill covers cryptographic hash validation (SHA-256, SHA-512) and secure digest handling. Essential for mcp-client's core security invariant: **always validate manifest and bundle integrity before execution**.
+This skill covers cryptographic hash validation (SHA-256, SHA-512) and secure digest handling. Essential for mcp-cage's core security invariant: **always validate manifest and bundle integrity before execution**.
 
 ---
 
@@ -28,12 +28,12 @@ algo              128 hex chars (SHA-512 = 512 bits = 64 bytes)
 
 | Algorithm | Output Bits | Hex Chars | Strength | Use Case |
 |-----------|------------|-----------|----------|----------|
-| SHA-256   | 256        | 64        | Strong   | Default for mcp-client |
+| SHA-256   | 256        | 64        | Strong   | Default for mcp-cage |
 | SHA-512   | 512        | 128       | Stronger | Future-proofing |
 | MD5       | 128        | 32        | Broken   | NEVER USE |
 | SHA-1     | 160        | 40        | Weak     | NEVER USE |
 
-**mcp-client mandate:** Only SHA-256 for v1.0, SHA-512 for future upgrades.
+**mcp-cage mandate:** Only SHA-256 for v1.0, SHA-512 for future upgrades.
 
 ---
 
@@ -252,7 +252,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"github.com/security-mcp/mcp-client/internal/registry"
+	"github.com/security-mcp/mcp-cage/internal/registry"
 )
 
 // DownloadAndValidate downloads a file and validates its digest
@@ -719,8 +719,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"github.com/security-mcp/mcp-client/internal/manifest"
-	"github.com/security-mcp/mcp-client/internal/registry"
+	"github.com/security-mcp/mcp-cage/internal/manifest"
+	"github.com/security-mcp/mcp-cage/internal/registry"
 )
 
 // ExecutePackage is the complete workflow
@@ -790,7 +790,7 @@ func ExecutePackage(
 
 ## Summary
 
-The digest validation system is the foundation of mcp-client's security:
+The digest validation system is the foundation of mcp-cage's security:
 
 1. **Mandatory validation:** Always validate manifest and bundle digests
 2. **SHA-256:** Primary algorithm, non-negotiable

@@ -2,13 +2,13 @@
 
 ## Overview
 
-This document describes the sandboxing mechanisms available on Windows, what mcp-client currently implements, known bugs, and a roadmap for improvements.
+This document describes the sandboxing mechanisms available on Windows, what mcp-cage currently implements, known bugs, and a roadmap for improvements.
 
 **Current status: Only timeout enforcement works. Job Object limits are created but never applied (NO-OP bug).**
 
 ---
 
-## 1. Mechanisms Windows Provides (Independent of mcp-client)
+## 1. Mechanisms Windows Provides (Independent of mcp-cage)
 
 ### 1.1 Job Objects
 
@@ -120,7 +120,7 @@ This document describes the sandboxing mechanisms available on Windows, what mcp
 
 ---
 
-## 2. What mcp-client Currently Implements
+## 2. What mcp-cage Currently Implements
 
 ### 2.1 windows.go: Actual Behavior
 
@@ -232,9 +232,9 @@ Call `SetInformationJobObject` via `syscall.NewLazyDLL("kernel32.dll").NewProc("
 
 ### P0: KILL_ON_JOB_CLOSE
 
-Set `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE` flag on the Job Object. When the mcp-client parent process exits (normally or crashes), all child processes in the Job Object are automatically terminated by the kernel.
+Set `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE` flag on the Job Object. When the mcp-cage parent process exits (normally or crashes), all child processes in the Job Object are automatically terminated by the kernel.
 
-**Impact:** Guarantees process tree cleanup even if mcp-client crashes.
+**Impact:** Guarantees process tree cleanup even if mcp-cage crashes.
 
 ### P0: Fix Capabilities() False Positives
 

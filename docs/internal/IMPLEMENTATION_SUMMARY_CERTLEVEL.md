@@ -6,7 +6,7 @@
 
 ## Overview
 
-Successfully implemented enforcement of certification level (0-3) policies in mcp-client, allowing organizations to configure minimum certification requirements for MCP execution with flexible enforcement modes.
+Successfully implemented enforcement of certification level (0-3) policies in mcp-cage, allowing organizations to configure minimum certification requirements for MCP execution with flexible enforcement modes.
 
 ## What Was Implemented
 

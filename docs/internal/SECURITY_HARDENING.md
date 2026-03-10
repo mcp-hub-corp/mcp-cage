@@ -2,11 +2,11 @@
 
 ## Summary
 
-This document describes the critical security enhancement that implements mandatory default limits for mcp-client execution. This prevents unsafe execution without resource constraints.
+This document describes the critical security enhancement that implements mandatory default limits for mcp-cage execution. This prevents unsafe execution without resource constraints.
 
 ## Problem Statement
 
-Previously, the mcp-client allowed execution of MCP servers without proper resource limits if configuration was incomplete or misconfigured. This violates the security invariant:
+Previously, the mcp-cage allowed execution of MCP servers without proper resource limits if configuration was incomplete or misconfigured. This violates the security invariant:
 
 > **CRITICAL SECURITY INVARIANT: No code path shall execute an MCP process without explicitly set resource limits.**
 

@@ -4,7 +4,7 @@
 
 Consolidated table of sandboxing improvements across all platforms. Prioritized by security impact and implementation complexity.
 
-**Key insight:** All three platforms (Linux, macOS, Windows) have kernel-enforced sandboxing mechanisms available that mcp-client does not currently use. The gap is not in the OS — it's in the implementation.
+**Key insight:** All three platforms (Linux, macOS, Windows) have kernel-enforced sandboxing mechanisms available that mcp-cage does not currently use. The gap is not in the OS — it's in the implementation.
 
 ---
 

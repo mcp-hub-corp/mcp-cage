@@ -1,6 +1,6 @@
 # TAR.GZ Security: Safe Bundle Extraction
 
-This skill provides expert knowledge for secure tar.gz bundle extraction in mcp-client.
+This skill provides expert knowledge for secure tar.gz bundle extraction in mcp-cage.
 
 ## Security Threats
 
@@ -18,7 +18,7 @@ This skill provides expert knowledge for secure tar.gz bundle extraction in mcp-
 - Reject if any file exceeds limit: `header.Size > maxExtractSize`
 - Reject if cumulative exceeds limit: `totalExtracted > maxExtractSize`
 
-**mcp-client Implementation** (internal/cli/run.go):
+**mcp-cage Implementation** (internal/cli/run.go):
 ```go
 const maxExtractSize = 1024 * 1024 * 1024 // 1GB limit
 
@@ -64,7 +64,7 @@ tar -tzf bomb.tar.gz | head -1
 2. **Reject dangerous prefixes**: `..` or `/` at start
 3. **Verify containment**: Ensure final path stays within `destDir`
 
-**mcp-client Implementation** (internal/cli/run.go):
+**mcp-cage Implementation** (internal/cli/run.go):
 ```go
 // Step 1: Normalize
 cleanPath := filepath.Clean(header.Name)
@@ -114,7 +114,7 @@ tar --transform 's,^,../,S' -czf traversal.tar.gz /etc/passwd
 - **Validate symlink targets**: Resolve target, ensure it's within or safe
 - **Alternative**: Skip symlinks (reject) or resolve to final path safely
 
-**mcp-client Implementation** (recommended enhancement):
+**mcp-cage Implementation** (recommended enhancement):
 ```go
 case tar.TypeSymlink:
     // Option 1: Reject all symlinks (safest for untrusted archives)
@@ -132,7 +132,7 @@ case tar.TypeSymlink:
     // }
 ```
 
-**Current Status in mcp-client**: NOT IMPLEMENTED (tar.TypeSymlink and tar.TypeLink not handled)
+**Current Status in mcp-cage**: NOT IMPLEMENTED (tar.TypeSymlink and tar.TypeLink not handled)
 
 **Suggested Fix**:
 ```go
@@ -287,7 +287,7 @@ if !isValidFilename(header.Name) {
 }
 ```
 
-**Current mcp-client**: No explicit filename validation (relies on filepath.Clean)
+**Current mcp-cage**: No explicit filename validation (relies on filepath.Clean)
 
 ---
 
@@ -304,7 +304,7 @@ if !isValidFilename(header.Name) {
 - Prevents group/world read (confines sensitive data)
 - Operator must explicitly `chmod +x` to make executable
 
-**mcp-client Implementation** (internal/cli/run.go):
+**mcp-cage Implementation** (internal/cli/run.go):
 ```go
 case tar.TypeDir:
     // SAFE: Use restrictive permissions regardless of archive
@@ -354,7 +354,7 @@ tar -tzf perms.tar.gz | grep script
 ### 8. Size Limits (Per-File & Total)
 **Threat**: Individual large files or cumulative extraction exhausts disk/memory.
 
-**Limits in mcp-client**:
+**Limits in mcp-cage**:
 - **Per-file**: 1GB (same as total, prevents single huge file)
 - **Total**: 1GB (prevents decompression bomb)
 - **Manifest**: 10MB (registry/client.go: MaxManifestSize)
@@ -614,7 +614,7 @@ smcp run acme/hello-world@1.0.0 → SUCCESS
 
 ---
 
-## Real Code: mcp-client CLI/run.go
+## Real Code: mcp-cage CLI/run.go
 
 **Current implementation** (working, but could be enhanced for symlinks):
 ```go

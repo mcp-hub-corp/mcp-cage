@@ -1,8 +1,8 @@
-# CI/CD Automation for mcp-client
+# CI/CD Automation for mcp-cage
 
 ## Overview
 
-This skill covers designing, implementing, and optimizing CI/CD pipelines for mcp-client. Includes GitHub Actions workflows, multi-platform testing, release automation, and best practices for Go projects.
+This skill covers designing, implementing, and optimizing CI/CD pipelines for mcp-cage. Includes GitHub Actions workflows, multi-platform testing, release automation, and best practices for Go projects.
 
 **Key Areas:**
 - GitHub Actions CI/CD workflows
@@ -45,7 +45,7 @@ Merge → Release (tagged) → goreleaser → Multi-platform binaries
 
 ### 2.1 Current CI Configuration
 
-**Location:** `/Users/cr0hn/Dropbox/Projects/mcp-client/.github/workflows/ci.yml`
+**Location:** `/Users/cr0hn/Dropbox/Projects/mcp-cage/.github/workflows/ci.yml`
 
 ```yaml
 name: CI
@@ -327,7 +327,7 @@ go test -short ./...
 
 ### 5.1 golangci-lint Configuration
 
-**Location:** `/Users/cr0hn/Dropbox/Projects/mcp-client/.golangci.yml`
+**Location:** `/Users/cr0hn/Dropbox/Projects/mcp-cage/.golangci.yml`
 
 ```yaml
 # GolangCI-Lint configuration
@@ -441,8 +441,8 @@ go tool cover -func=coverage.out
 
 **Output:**
 ```
-github.com/security-mcp/mcp-client/internal/cache/store.go:42:  NewStore        80.0%
-github.com/security-mcp/mcp-client/internal/cache/store.go:52:  GetManifest     95.0%
+github.com/security-mcp/mcp-cage/internal/cache/store.go:42:  NewStore        80.0%
+github.com/security-mcp/mcp-cage/internal/cache/store.go:52:  GetManifest     95.0%
 ...
 ```
 
@@ -481,7 +481,7 @@ github.com/security-mcp/mcp-client/internal/cache/store.go:52:  GetManifest     
 
 **Badge in README:**
 ```markdown
-[![codecov](https://codecov.io/gh/security-mcp/mcp-client/branch/main/graph/badge.svg)](https://codecov.io/gh/security-mcp/mcp-client)
+[![codecov](https://codecov.io/gh/security-mcp/mcp-cage/branch/main/graph/badge.svg)](https://codecov.io/gh/security-mcp/mcp-cage)
 ```
 
 ---
@@ -490,7 +490,7 @@ github.com/security-mcp/mcp-client/internal/cache/store.go:52:  GetManifest     
 
 ### 7.1 Release Workflow Configuration
 
-**Location:** `/Users/cr0hn/Dropbox/Projects/mcp-client/.github/workflows/release.yml`
+**Location:** `/Users/cr0hn/Dropbox/Projects/mcp-cage/.github/workflows/release.yml`
 
 ```yaml
 name: Release
@@ -522,11 +522,11 @@ jobs:
 
     - name: Build binaries
       run: |
-        GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-linux-amd64 ./cmd/smcp
-        GOOS=linux GOARCH=arm64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-linux-arm64 ./cmd/smcp
-        GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-darwin-amd64 ./cmd/smcp
-        GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-darwin-arm64 ./cmd/smcp
-        GOOS=windows GOARCH=amd64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-client/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-windows-amd64.exe ./cmd/smcp
+        GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-cage/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-linux-amd64 ./cmd/smcp
+        GOOS=linux GOARCH=arm64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-cage/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-linux-arm64 ./cmd/smcp
+        GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-cage/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-darwin-amd64 ./cmd/smcp
+        GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-cage/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-darwin-arm64 ./cmd/smcp
+        GOOS=windows GOARCH=amd64 go build -ldflags "-s -w -X github.com/security-mcp/mcp-cage/internal/cli.Version=${GITHUB_REF#refs/tags/}" -o mcp-windows-amd64.exe ./cmd/smcp
 
     - name: Create checksums
       run: |
@@ -587,7 +587,7 @@ version: 2
 builds:
   - main: ./cmd/smcp
     binary: smcp
-    ldflags: -X github.com/security-mcp/mcp-client/internal/cli.Version={{.Version}}
+    ldflags: -X github.com/security-mcp/mcp-cage/internal/cli.Version={{.Version}}
     goos:
       - linux
       - darwin
@@ -609,7 +609,7 @@ checksum:
 release:
   github:
     owner: security-mcp
-    name: mcp-client
+    name: mcp-cage
 ```
 
 **Usage:**
@@ -632,7 +632,7 @@ goreleaser release --clean
 
 ### 8.1 Makefile Targets
 
-**Location:** `/Users/cr0hn/Dropbox/Projects/mcp-client/Makefile`
+**Location:** `/Users/cr0hn/Dropbox/Projects/mcp-cage/Makefile`
 
 ```makefile
 .PHONY: build test lint fmt clean install help
@@ -644,9 +644,9 @@ BINARY=smcp
 VERSION ?= dev
 GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_DATE := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-LDFLAGS := -X github.com/security-mcp/mcp-client/internal/cli.Version=$(VERSION) \
-           -X github.com/security-mcp/mcp-client/internal/cli.GitCommit=$(GIT_COMMIT) \
-           -X github.com/security-mcp/mcp-client/internal/cli.BuildDate=$(BUILD_DATE)
+LDFLAGS := -X github.com/security-mcp/mcp-cage/internal/cli.Version=$(VERSION) \
+           -X github.com/security-mcp/mcp-cage/internal/cli.GitCommit=$(GIT_COMMIT) \
+           -X github.com/security-mcp/mcp-cage/internal/cli.BuildDate=$(BUILD_DATE)
 
 build: ## Build the mcp binary
 	go build -ldflags "$(LDFLAGS)" -o $(BINARY) ./cmd/smcp
@@ -864,8 +864,8 @@ Settings → Secrets and variables → Actions
 
 **In README:**
 ```markdown
-[![CI](https://github.com/security-mcp/mcp-client/actions/workflows/ci.yml/badge.svg)](https://github.com/security-mcp/mcp-client/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/security-mcp/mcp-client/branch/main/graph/badge.svg)](https://codecov.io/gh/security-mcp/mcp-client)
+[![CI](https://github.com/security-mcp/mcp-cage/actions/workflows/ci.yml/badge.svg)](https://github.com/security-mcp/mcp-cage/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/security-mcp/mcp-cage/branch/main/graph/badge.svg)](https://codecov.io/gh/security-mcp/mcp-cage)
 ```
 
 ### 12.2 Slack Notifications (Optional)
@@ -1020,7 +1020,7 @@ jobs:
 
 ## 15. CI/CD Checklist
 
-When setting up CI/CD for mcp-client:
+When setting up CI/CD for mcp-cage:
 
 - [ ] All tests pass locally before pushing
 - [ ] CI runs on push and PR to main

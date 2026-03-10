@@ -138,5 +138,5 @@ Standard HTTP status codes:
 1. **Redirects**: Follow 302/307 redirects for presigned URLs
 2. **Retries**: Retry 5xx errors with exponential backoff (3 attempts max)
 3. **Digest Validation**: Always validate SHA256 after download
-4. **User Agent**: Send `User-Agent: mcp-client/<version>`
+4. **User Agent**: Send `User-Agent: mcp-cage/<version>`
 5. **Timeouts**: Use reasonable timeouts (30s for API calls, longer for downloads)

@@ -2,7 +2,7 @@
 
 **Expert knowledge for writing secure Go code** - covering input validation, injection prevention, cryptography, memory safety, concurrency, and common vulnerabilities specific to Go applications.
 
-Essential for mcp-client's security posture and applicable to any Go project prioritizing security.
+Essential for mcp-cage's security posture and applicable to any Go project prioritizing security.
 
 ---
 
@@ -26,7 +26,7 @@ Essential for mcp-client's security posture and applicable to any Go project pri
 16. [Common Vulnerabilities & Mitigations](#common-vulnerabilities--mitigations)
 17. [Go-Specific Vulnerabilities](#go-specific-vulnerabilities)
 18. [Security Checklist](#security-checklist)
-19. [Real-World mcp-client Patterns](#real-world-mcp-client-patterns)
+19. [Real-World mcp-cage Patterns](#real-world-mcp-cage-patterns)
 
 ---
 
@@ -151,7 +151,7 @@ func ValidateEmail(email string) bool {
 	return true
 }
 
-// Character set validation for package names (mcp-client pattern)
+// Character set validation for package names (mcp-cage pattern)
 func ValidatePackageName(name string) error {
 	if name == "" {
 		return errors.New("package name cannot be empty")
@@ -265,7 +265,7 @@ func ValidateInput(input string) error {
 }
 ```
 
-**mcp-client Pattern: Bundle Execution**
+**mcp-cage Pattern: Bundle Execution**
 
 ```go
 // CORRECT: Safe entrypoint execution
@@ -355,7 +355,7 @@ func ValidatePathComponents(path string) error {
 }
 ```
 
-**mcp-client Pattern: Bundle Extraction**
+**mcp-cage Pattern: Bundle Extraction**
 
 ```go
 // CORRECT: Safe tar extraction with path validation
@@ -563,7 +563,7 @@ func VerifyToken(provided string, expected string) bool {
 	// Timing is independent of mismatched position
 }
 
-// Example: Digest verification (mcp-client)
+// Example: Digest verification (mcp-cage)
 func VerifyDigest(computed string, expected string) error {
 	if subtle.ConstantTimeCompare(
 		[]byte(computed),
@@ -672,7 +672,7 @@ func init() {
 // It reads from OS entropy (/dev/urandom on Linux)
 // Just import and use crypto/rand.Read()
 
-// Example: mcp-client secure cache directory
+// Example: mcp-cage secure cache directory
 func CreateSecureCache() (string, error) {
 	// Generate random suffix to prevent timing attacks
 	randomBytes := make([]byte, 8)
@@ -2493,7 +2493,7 @@ func GetString(data map[string]interface{}) (string, error) {
 
 ---
 
-## Real-World mcp-client Patterns
+## Real-World mcp-cage Patterns
 
 ### Pattern 1: Digest Validation (Safe Crypto)
 

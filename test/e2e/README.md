@@ -2,7 +2,7 @@
 
 ## Overview
 
-This directory contains E2E tests that validate the complete mcp-client workflow against a real mcp-registry server.
+This directory contains E2E tests that validate the complete mcp-cage workflow against a real mcp-registry server.
 
 ## Prerequisites
 
