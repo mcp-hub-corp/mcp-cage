@@ -44,7 +44,7 @@ type SecurityWarning struct {
 	Findings             *manifest.FindingsSummary
 	Origin               string
 	SandboxContext       *SandboxContext // sandbox restriction context for LLM awareness
-	ScoreWarningDisabled bool           // skip score warning text for high-score packages
+	ScoreWarningDisabled bool            // skip score warning text for high-score packages
 }
 
 // ScoreLabel returns a human-readable risk label for a security score.
@@ -173,11 +173,12 @@ func (w *SecurityWarning) generateSandboxContextWarning() string {
 	}
 
 	// Network access
-	if ctx.AllNet {
+	switch {
+	case ctx.AllNet:
 		b.WriteString("Network Access: FULL ACCESS (--allow-all-net)\n")
-	} else if len(ctx.NetworkDomains) > 0 {
+	case len(ctx.NetworkDomains) > 0:
 		fmt.Fprintf(&b, "Network Access: ALLOWED (%s)\n", strings.Join(ctx.NetworkDomains, ", "))
-	} else {
+	default:
 		b.WriteString("Network Access: DENIED (no domains allowed)\n")
 	}
 
@@ -189,11 +190,12 @@ func (w *SecurityWarning) generateSandboxContextWarning() string {
 	}
 
 	// Environment access
-	if ctx.AllEnv {
+	switch {
+	case ctx.AllEnv:
 		b.WriteString("Environment Variables: FULL ACCESS (--allow-all-env)\n")
-	} else if len(ctx.AllowedEnvVars) > 0 {
+	case len(ctx.AllowedEnvVars) > 0:
 		fmt.Fprintf(&b, "Environment Variables: RESTRICTED (%s)\n", strings.Join(ctx.AllowedEnvVars, ", "))
-	} else {
+	default:
 		b.WriteString("Environment Variables: RESTRICTED (manifest-declared only)\n")
 	}
 

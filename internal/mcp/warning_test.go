@@ -338,7 +338,7 @@ func TestGenerateInstructionsWarning_BlanketFlags(t *testing.T) {
 				AllFS:    true,
 				AllNet:   true,
 				CLIOverrides: &PermissionOverrides{
-					AllFS: true,
+					AllFS:  true,
 					AllNet: true,
 				},
 			},

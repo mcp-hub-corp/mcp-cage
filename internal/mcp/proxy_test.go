@@ -894,7 +894,7 @@ func TestProxy_WriteToClient_ThreadSafe(t *testing.T) {
 		go func(n int) {
 			defer wg.Done()
 			msg := fmt.Sprintf("message-%d", n)
-			_, _ = proxy.writeToClient([]byte(msg))
+			_ = proxy.writeToClient([]byte(msg))
 		}(i)
 	}
 	wg.Wait()

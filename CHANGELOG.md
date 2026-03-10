@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **2026-03-10**: Fixed all golangci-lint errors in `internal/mcp/proxy.go`, `internal/mcp/warning.go`, and `internal/mcp/warning_test.go`:
+  - Converted if-else chains to switch statements in `buildSandboxSuggestion` (proxy.go), and in the network/environment access sections of `generateSandboxContextWarning` (warning.go) — resolves `ifElseChain` (gocritic) warnings.
+  - Inverted two nested if conditions in `injectSandboxErrorInResult` to use early `continue` instead of deeply nested bodies — resolves `nestingReduce` (gocritic) warnings.
+  - Changed `writeToClient` return type from `(int, error)` to `error` since the int (bytes written) was never used by any caller — resolves `unparam` warning. Updated all call sites in proxy.go, proxy_test.go.
+  - Applied `gofmt` formatting fixes to warning.go (struct field alignment) and warning_test.go (composite literal formatting).
+
 - **2026-03-10**: Fixed CI test failures in `TestBuildSandboxSuggestion`. Synced `buildSandboxSuggestion` messages with test expectations: generic errors now mention "restricted resource", AllFS/AllNet active cases now include "already fully granted" in the status message.
 
 ## [0.3.1] - 2026-03-03

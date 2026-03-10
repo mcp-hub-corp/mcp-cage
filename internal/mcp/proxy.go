@@ -183,7 +183,7 @@ func (p *MCPProxy) handleHandshake(clientBuf, serverBuf *bufio.Reader) error {
 		msg, parseErr := ParseMessage(line)
 		if parseErr != nil {
 			// Not JSON — forward as-is
-			if _, writeErr := p.writeToClient(appendNewline(line)); writeErr != nil {
+			if writeErr := p.writeToClient(appendNewline(line)); writeErr != nil {
 				return fmt.Errorf("forwarding non-JSON server data: %w", writeErr)
 			}
 			continue
@@ -197,7 +197,7 @@ func (p *MCPProxy) handleHandshake(clientBuf, serverBuf *bufio.Reader) error {
 					slog.String("error", modErr.Error()))
 				modified = line
 			}
-			if _, writeErr := p.writeToClient(appendNewline(modified)); writeErr != nil {
+			if writeErr := p.writeToClient(appendNewline(modified)); writeErr != nil {
 				return fmt.Errorf("forwarding modified init response: %w", writeErr)
 			}
 			p.logger.Debug("injected security warning into initialize response")
@@ -205,7 +205,7 @@ func (p *MCPProxy) handleHandshake(clientBuf, serverBuf *bufio.Reader) error {
 		}
 
 		// Not the init response — forward as-is
-		if _, writeErr := p.writeToClient(appendNewline(line)); writeErr != nil {
+		if writeErr := p.writeToClient(appendNewline(line)); writeErr != nil {
 			return fmt.Errorf("forwarding server data: %w", writeErr)
 		}
 	}
@@ -237,7 +237,7 @@ func (p *MCPProxy) handleHandshake(clientBuf, serverBuf *bufio.Reader) error {
 				p.logger.Warn("failed to marshal notification warning",
 					slog.String("error", marshalErr.Error()))
 			} else {
-				if _, writeErr := p.writeToClient(appendNewline(notifBytes)); writeErr != nil {
+				if writeErr := p.writeToClient(appendNewline(notifBytes)); writeErr != nil {
 					p.logger.Warn("failed to send notification warning",
 						slog.String("error", writeErr.Error()))
 				} else {
@@ -301,10 +301,11 @@ func (p *MCPProxy) buildNotification() JSONRPCMessage {
 // writeToClient writes data to the LLM client, protected by a mutex.
 // This is needed when multiple goroutines (server→client, stderr→client)
 // may inject notifications concurrently.
-func (p *MCPProxy) writeToClient(data []byte) (int, error) {
+func (p *MCPProxy) writeToClient(data []byte) error {
 	p.writeMu.Lock()
 	defer p.writeMu.Unlock()
-	return p.clientWriter.Write(data)
+	_, err := p.clientWriter.Write(data)
+	return err
 }
 
 // closeServerWriter closes the serverWriter (MCP server's stdin pipe) if it
@@ -371,7 +372,7 @@ func (p *MCPProxy) rawCopyWithErrorScanning(clientBuf, serverBuf *bufio.Reader) 
 				p.logger.Debug("injected sandbox warning into tool result")
 			}
 
-			if _, writeErr := p.writeToClient(appendNewline(lineToWrite)); writeErr != nil {
+			if writeErr := p.writeToClient(appendNewline(lineToWrite)); writeErr != nil {
 				errCh <- fmt.Errorf("server→client write: %w", writeErr)
 				p.closeServerWriter()
 				return
@@ -381,7 +382,7 @@ func (p *MCPProxy) rawCopyWithErrorScanning(clientBuf, serverBuf *bufio.Reader) 
 			// to send a separate notification. Otherwise, fall back to notification.
 			if !injected {
 				if notification := p.detectSandboxError(line); notification != nil {
-					if _, writeErr := p.writeToClient(appendNewline(notification)); writeErr != nil {
+					if writeErr := p.writeToClient(appendNewline(notification)); writeErr != nil {
 						p.logger.Warn("failed to inject sandbox notification",
 							slog.String("error", writeErr.Error()))
 					}
@@ -465,7 +466,7 @@ func (p *MCPProxy) processStderr() {
 		p.logger.Debug("sandbox error detected in stderr, injecting notification",
 			slog.String("blocked_path", blockedPath))
 
-		if _, writeErr := p.writeToClient(appendNewline(notifBytes)); writeErr != nil {
+		if writeErr := p.writeToClient(appendNewline(notifBytes)); writeErr != nil {
 			p.logger.Warn("failed to inject stderr sandbox notification",
 				slog.String("error", writeErr.Error()))
 		}
@@ -509,27 +510,28 @@ func (p *MCPProxy) injectSandboxErrorInResult(line []byte) []byte {
 			for _, content := range res.Content {
 				if content.Type == "text" {
 					for _, pattern := range sandboxErrorPatterns {
-						if strings.Contains(content.Text, pattern) {
-							// Found sandbox error in content text
-							blockedPath := extractPathFromError(content.Text)
-							var ctx *SandboxContext
-							if p.warning != nil {
-								ctx = p.warning.SandboxContext
-							}
-							suggestion := buildSandboxSuggestion(blockedPath, content.Text, ctx)
-
-							warningText := fmt.Sprintf("\n\n[SMCP SANDBOX ALERT]\n%s\n\nINSTRUCTION TO LLM: Inform the user that this action was blocked for their safety.", suggestion)
-
-							// Append a new content item with the warning
-							newContent := Content{
-								Type: "text",
-								Text: warningText,
-							}
-							res.Content = append(res.Content, newContent)
-							res.IsError = true // Ensure it's marked as error
-							modified = true
-							goto ResultModified
+						if !strings.Contains(content.Text, pattern) {
+							continue
 						}
+						// Found sandbox error in content text
+						blockedPath := extractPathFromError(content.Text)
+						var ctx *SandboxContext
+						if p.warning != nil {
+							ctx = p.warning.SandboxContext
+						}
+						suggestion := buildSandboxSuggestion(blockedPath, content.Text, ctx)
+
+						warningText := fmt.Sprintf("\n\n[SMCP SANDBOX ALERT]\n%s\n\nINSTRUCTION TO LLM: Inform the user that this action was blocked for their safety.", suggestion)
+
+						// Append a new content item with the warning
+						newContent := Content{
+							Type: "text",
+							Text: warningText,
+						}
+						res.Content = append(res.Content, newContent)
+						res.IsError = true // Ensure it's marked as error
+						modified = true
+						goto ResultModified
 					}
 				}
 			}
@@ -550,21 +552,22 @@ func (p *MCPProxy) injectSandboxErrorInResult(line []byte) []byte {
 		if err := json.Unmarshal(msg.Error, &errObj); err == nil {
 			// Check message
 			for _, pattern := range sandboxErrorPatterns {
-				if strings.Contains(errObj.Message, pattern) {
-					// Modify message
-					blockedPath := extractPathFromError(errObj.Message)
-					var ctx *SandboxContext
-					if p.warning != nil {
-						ctx = p.warning.SandboxContext
-					}
-					suggestion := buildSandboxSuggestion(blockedPath, errObj.Message, ctx)
-					errObj.Message += fmt.Sprintf("\n\n[SMCP SANDBOX ALERT] %s", suggestion)
-
-					newError, _ := json.Marshal(errObj)
-					msg.Error = newError
-					newLine, _ := json.Marshal(msg)
-					return newLine
+				if !strings.Contains(errObj.Message, pattern) {
+					continue
 				}
+				// Modify message
+				blockedPath := extractPathFromError(errObj.Message)
+				var ctx *SandboxContext
+				if p.warning != nil {
+					ctx = p.warning.SandboxContext
+				}
+				suggestion := buildSandboxSuggestion(blockedPath, errObj.Message, ctx)
+				errObj.Message += fmt.Sprintf("\n\n[SMCP SANDBOX ALERT] %s", suggestion)
+
+				newError, _ := json.Marshal(errObj)
+				msg.Error = newError
+				newLine, _ := json.Marshal(msg)
+				return newLine
 			}
 		}
 	}
@@ -649,7 +652,8 @@ func buildSandboxSuggestion(blockedPath, errText string, ctx *SandboxContext) st
 
 	sb.WriteString("SECURITY ALERT: The MCP server attempted a restricted operation.\n")
 
-	if blockedPath != "" {
+	switch {
+	case blockedPath != "":
 		if ctx != nil && ctx.AllFS {
 			fmt.Fprintf(&sb, "Action: Access file '%s'.\n", blockedPath)
 			sb.WriteString("Status: BLOCKED. Filesystem access is already fully granted (--allow-fs). This may be due to OS-level protections.\n")
@@ -662,7 +666,7 @@ func buildSandboxSuggestion(blockedPath, errText string, ctx *SandboxContext) st
 			fmt.Fprintf(&sb, "\nIf you explicitly trust this server and want to allow this specific access, you can restart with:\n")
 			fmt.Fprintf(&sb, "  --allow-write %s\n", blockedPath)
 		}
-	} else if strings.Contains(errText, "network") || strings.Contains(errText, "connect") {
+	case strings.Contains(errText, "network") || strings.Contains(errText, "connect"):
 		sb.WriteString("Action: Network connection.\n")
 		if ctx != nil && ctx.AllNet {
 			sb.WriteString("Status: FAILED. Network access is already fully granted (--allow-all-net). Likely a connectivity issue.\n")
@@ -675,7 +679,7 @@ func buildSandboxSuggestion(blockedPath, errText string, ctx *SandboxContext) st
 			sb.WriteString("  --allow-net <domain> (for specific domains)\n")
 			sb.WriteString("  --allow-all-net (for all network access)\n")
 		}
-	} else {
+	default:
 		sb.WriteString("Action: Attempted to access a restricted resource.\n")
 		sb.WriteString("Status: BLOCKED by sandbox.\n")
 	}
